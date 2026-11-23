@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { getSchemaHealth, type SchemaHealth, resetSchemaHealthCache } from "@/lib/schemaHealth";
 
+const HEALTH_OK_KEY = "kovo:schema-ok";
+
 interface Props {
   children: ReactNode;
 }
@@ -15,11 +17,23 @@ export default function SchemaHealthGate({ children }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    getSchemaHealth().then((r) => {
-      if (!cancelled) setState(r);
-    });
+    // A healthy result is remembered for the session, and the check waits
+    // until the page has loaded so it never delays what shoppers see.
+    let known = false;
+    try { known = sessionStorage.getItem(HEALTH_OK_KEY) === "1"; } catch { /* ignore */ }
+    if (known) return;
+    const run = () =>
+      getSchemaHealth().then((r) => {
+        if (r.ok) { try { sessionStorage.setItem(HEALTH_OK_KEY, "1"); } catch { /* ignore */ } }
+        if (!cancelled) setState(r);
+      });
+    const start = () => setTimeout(run, 3000);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (document.readyState === "complete") timer = start();
+    else window.addEventListener("load", () => { timer = start(); }, { once: true });
     return () => {
       cancelled = true;
+      if (timer) clearTimeout(timer);
     };
   }, []);
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 
 const emailSchema = z
   .string()
@@ -27,6 +27,7 @@ export async function subscribeToNewsletter(rawEmail: string): Promise<Newslette
     return { ok: false, reason: "invalid", message: parsed.error.issues[0]?.message ?? "Invalid email" };
   }
   const email = parsed.data;
+  const supabase = await getSupabase();
   const { error } = await supabase.rpc("subscribe_newsletter", { _email: email });
   if (error) {
     return { ok: false, reason: "network", message: error.message || "Could not subscribe. Please try again." };

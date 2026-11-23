@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 
 export interface ActiveOffer {
   id: string;
@@ -18,6 +18,7 @@ export async function getActiveOffers(): Promise<ActiveOffer[]> {
   if (cachedOffers && Date.now() - cacheTime < CACHE_TTL) return cachedOffers;
   
   const now = new Date().toISOString();
+  const supabase = await getSupabase();
   const { data } = await supabase
     .from("offers")
     .select("id, name, discount_type, discount_value, apply_to, target_ids, banner_image")

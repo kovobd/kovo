@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
-import { resolveImageSrc, isR2VariantRef, getR2BaseKey, buildSrcSet, r2Url } from "@/lib/cdnImage";
+import { resolveImageSrc, isR2VariantRef, getR2BaseKey, buildSrcSet, r2Url, isResizableUrl, resizedSrcSet } from "@/lib/cdnImage";
 
 export type InteractionMode = "buttons" | "image" | "both";
 
@@ -49,10 +49,15 @@ interface HeroSliderProps {
   loading: boolean;
 }
 
+const MOBILE_QUERY = "(max-width: 767px)";
 const useIsMobile = () => {
-  const [m, setM] = useState(false);
+  // Read the viewport synchronously so phones never start downloading the
+  // desktop hero image on the first render.
+  const [m, setM] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
+  );
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
+    const mq = window.matchMedia(MOBILE_QUERY);
     const on = () => setM(mq.matches);
     on();
     mq.addEventListener("change", on);
@@ -100,7 +105,9 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
   } else {
     imgNode = (
       <img
-        src={resolveImageSrc(rawSrc, 1600)}
+        src={resolveImageSrc(rawSrc, isMobile ? 800 : 1600)}
+        srcSet={isResizableUrl(rawSrc) ? resizedSrcSet(rawSrc, isMobile ? [480, 720, 1080] : [960, 1280, 1600, 1920]) : undefined}
+        sizes={isResizableUrl(rawSrc) ? sizes : undefined}
         alt={altText}
         className="absolute inset-0 w-full h-full object-cover"
         loading={priority ? "eager" : "lazy"}
@@ -172,6 +179,17 @@ const SingleSliderCarousel = ({ slides, settings, isMobile }: { slides: HeroSlid
     watchDrag: settings.swipe_enabled,
   });
   const [activeIndex, setActiveIndex] = useState(0);
+  // Slides after the first wait until the page has loaded, so the first
+  // hero image gets the whole connection.
+  const [laterSlidesReady, setLaterSlidesReady] = useState(false);
+  useEffect(() => {
+    const ready = () => setTimeout(() => setLaterSlidesReady(true), 1200);
+    if (document.readyState === "complete") { const t = ready(); return () => clearTimeout(t); }
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const onLoad = () => { t = ready(); };
+    window.addEventListener("load", onLoad, { once: true });
+    return () => { window.removeEventListener("load", onLoad); if (t) clearTimeout(t); };
+  }, []);
   const hoverRef = useRef(false);
 
   const onSelect = useCallback(() => {
@@ -202,8 +220,10 @@ const SingleSliderCarousel = ({ slides, settings, isMobile }: { slides: HeroSlid
       <div className="embla absolute inset-0" ref={emblaRef}>
         <div className="embla__container flex h-full">
           {slides.map((slide, index) => (
-            <div className="embla__slide flex-[0_0_100%] min-w-0 relative h-full" key={slide.id}>
-              <SlideOverlay slide={slide} priority={index === 0} isMobile={isMobile} />
+            <div className="embla__slide flex-[0_0_100%] min-w-0 relative h-full bg-secondary" key={slide.id}>
+              {(index === 0 || laterSlidesReady || index === activeIndex) && (
+                <SlideOverlay slide={slide} priority={index === 0} isMobile={isMobile} />
+              )}
             </div>
           ))}
         </div>

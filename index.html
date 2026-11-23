@@ -50,6 +50,27 @@
   <meta name="twitter:description" content="Kovo — bags and accessories, delivered across Bangladesh with cash on delivery.">
 </head>
   <body style="background:#FFFFFF;color:#121212;">
+    <script>
+      // Start the storefront data requests now, in parallel with the app bundle.
+      // src/lib/publicApi.ts picks these promises up by URL.
+      (function () {
+        try {
+          var edge = /(^|\.)kovobd\.com$|\.workers\.dev$/.test(location.hostname);
+          var supa = "%VITE_SUPABASE_URL%", key = "%VITE_SUPABASE_PUBLISHABLE_KEY%";
+          var v = null; try { v = localStorage.getItem("mvbd:storefrontVersion"); } catch (e) {}
+          var store = (window.__kovoEarly = {});
+          var go = function (fn) {
+            var u = new URL(edge ? "/api/public/" + fn : supa + "/functions/v1/" + fn, location.origin);
+            if (v) u.searchParams.set("v", v);
+            var url = u.toString();
+            store[url] = fetch(url, edge ? {} : { headers: { apikey: key, Authorization: "Bearer " + key } });
+            store[url].catch(function () { delete store[url]; });
+          };
+          go("public-layout");
+          if (location.pathname === "/") go("public-home");
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script>
       try {

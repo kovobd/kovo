@@ -1,5 +1,5 @@
 // Comprehensive Meta Pixel + GA4 + TikTok tracking with CAPI support, advanced matching & event deduplication
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 import { isMetaTrackingEnabled } from "@/lib/trackingConfig";
 
 
@@ -97,11 +97,11 @@ export const splitName = (fullName?: string) => {
 const logBrowserPixel = (eventName: string, eventId: string, customData: Record<string, any>) => {
   if (typeof window === "undefined") return;
   const run = () => {
-    supabase.rpc("log_browser_pixel_event" as any, {
+    getSupabase().then((supabase) => supabase.rpc("log_browser_pixel_event" as any, {
       p_event_name: eventName,
       p_event_id: eventId,
       p_custom_data: customData || {},
-    }).then(() => {}, () => {});
+    })).then(() => {}, () => {});
   };
   if ("requestIdleCallback" in window) (window as any).requestIdleCallback(run, { timeout: 2000 });
   else setTimeout(run, 0);
@@ -115,14 +115,21 @@ const sendCAPI = (
   userData?: Record<string, any>,
   eventTime?: number,
 ) => {
-  logBrowserPixel(eventName, eventId, customData);
   // Skip the network round-trip entirely when we already know no Meta pixel
-  // is configured. `null` = layout not yet resolved → still send so we don't
-  // miss the first PageView race.
+  // is configured. `null` = layout not yet resolved → decide again when the
+  // idle callback runs, by which time the layout has usually arrived.
   if (isMetaTrackingEnabled() === false) return;
   const ts = eventTime ?? Math.floor(Date.now() / 1000);
+  let waits = 0;
   const run = async () => {
+    const enabled = isMetaTrackingEnabled();
+    if (enabled === false) return;
+    // Settings not loaded yet: check again shortly rather than loading the
+    // Supabase SDK for a pixel that may not exist (gives up after ~6 s).
+    if (enabled === null && waits < 12) { waits++; setTimeout(run, 500); return; }
+    logBrowserPixel(eventName, eventId, customData);
     try {
+      const supabase = await getSupabase();
       const { data, error } = await supabase.functions.invoke("meta-capi", {
         body: {
           event_name: eventName,
@@ -145,9 +152,9 @@ const sendCAPI = (
   };
   if (typeof window === "undefined") return;
   if ("requestIdleCallback" in window) {
-    (window as any).requestIdleCallback(run, { timeout: 2000 });
+    (window as any).requestIdleCallback(run, { timeout: 3000 });
   } else {
-    setTimeout(run, 0);
+    setTimeout(run, 1500);
   }
 };
 

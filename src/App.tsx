@@ -16,7 +16,7 @@ const DeferredProviders = lazy(() => import("@/components/layout/DeferredProvide
 
 
 import Index from "./pages/Index";
-import OrderConfirmation from "./pages/OrderConfirmation";
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 
 const Shop = lazy(() => import("./pages/Shop"));
 const ProductDetails = lazy(() => import("./pages/ProductDetails"));
@@ -113,25 +113,20 @@ if (typeof window !== "undefined") {
 }
 
 if (typeof window !== "undefined") {
+  // Warm the pages shoppers usually open next, but only after the current page
+  // has fully loaded so these downloads never compete with what is on screen.
+  // Everything else is prefetched on hover/touch by the header links.
   const prefetch = () => {
     import("./pages/Shop");
     import("./pages/ProductDetails");
     import("./pages/Cart");
-    import("./pages/Checkout");
-    import("./pages/About");
-    import("./pages/Contact");
-    import("./pages/Policies");
-    import("./pages/TrackOrder");
   };
-
-  if ("requestIdleCallback" in window) {
-    (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback?.(
-      prefetch,
-      { timeout: 2000 }
-    );
-  } else {
-    setTimeout(prefetch, 800);
-  }
+  const schedule = () => {
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+    setTimeout(() => (idle ? idle(prefetch, { timeout: 4000 }) : prefetch()), 2500);
+  };
+  if (document.readyState === "complete") schedule();
+  else window.addEventListener("load", schedule, { once: true });
 }
 
 import {
@@ -196,7 +191,7 @@ const App = () => {
               <Route path="/cart" element={<Route$ fallback={<CartPageSkeleton />}><Cart /></Route$>} />
 
               <Route path="/checkout" element={<Route$ fallback={<CheckoutPageSkeleton />}><Checkout /></Route$>} />
-              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/order-confirmation" element={<Route$ fallback={<SimplePageSkeleton />}><OrderConfirmation /></Route$>} />
               <Route path="/track-order" element={<Route$ fallback={<TrackOrderPageSkeleton />}><TrackOrder /></Route$>} />
             </Route>
 

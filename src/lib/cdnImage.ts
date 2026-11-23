@@ -105,6 +105,31 @@ export function buildSrcSet(baseKey: string, fmt: VariantFormat): string {
 }
 
 /** Resolve any DB value to a renderable URL (used by plain <img> consumers). */
+/** Image CDNs that resize on the fly through `w` / `h` query parameters. */
+export function isResizableUrl(src: string | null | undefined): src is string {
+  return !!src && /^https:\/\/images\.unsplash\.com\//.test(src);
+}
+
+/** The same resizable image at `width` px, keeping its crop ratio. */
+export function resizedUrl(src: string, width: number): string {
+  try {
+    const u = new URL(src);
+    const w = Number(u.searchParams.get("w")) || 0;
+    const h = Number(u.searchParams.get("h")) || 0;
+    u.searchParams.set("w", String(width));
+    if (w && h) u.searchParams.set("h", String(Math.round((h / w) * width)));
+    if (!u.searchParams.has("auto")) u.searchParams.set("auto", "format");
+    u.searchParams.set("q", "75");
+    return u.toString();
+  } catch {
+    return src;
+  }
+}
+
+export function resizedSrcSet(src: string, widths: readonly number[] = [400, 640, 960, 1280, 1920]): string {
+  return widths.map((w) => `${resizedUrl(src, w)} ${w}w`).join(", ");
+}
+
 export function resolveImageSrc(src: string | null | undefined, fallbackWidth: VariantWidth = 800): string {
   if (!src) return "/placeholder.svg";
   // If R2 CDN base URL isn't configured (e.g. fresh remix before user
@@ -118,6 +143,7 @@ export function resolveImageSrc(src: string | null | undefined, fallbackWidth: V
   if (isR2OriginalRef(src)) {
     return r2Direct(getR2BaseKey(src)) || "/placeholder.svg";
   }
+  if (isResizableUrl(src)) return resizedUrl(src, fallbackWidth);
   return src;
 }
 

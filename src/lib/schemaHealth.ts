@@ -7,7 +7,7 @@
  * yet applied), the helper returns a friendly "setup required" payload
  * instead of throwing so the UI can render a diagnostic page.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 
 export type SchemaHealth =
   | { ok: true }
@@ -32,6 +32,7 @@ export function resetSchemaHealthCache() {
 
 async function check(): Promise<SchemaHealth> {
   try {
+    const supabase = await getSupabase();
     // `schema_health` is part of database/full_setup.sql; the generated
     // RPC type list may not include it on first deploy, so call untyped.
     const { data, error } = await (

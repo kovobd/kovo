@@ -6,7 +6,10 @@ import {
   isR2OriginalRef,
   isR2Ref,
   isR2VariantRef,
+  isResizableUrl,
   R2_BASE_CHANGED_EVENT,
+  resizedSrcSet,
+  resizedUrl,
   r2Direct,
   r2Original,
   r2Url,
@@ -144,10 +147,13 @@ const CdnImage = forwardRef<HTMLImageElement, CdnImageProps>(function CdnImage(
   if (!isR2Ref(src) || isR2OriginalRef(src)) {
     const resolvedSrc = isR2OriginalRef(src) ? r2Direct(getR2BaseKey(src)) : src;
     if (!resolvedSrc) return null;
+    const resizable = isResizableUrl(resolvedSrc);
     return (
       <img
         ref={setImgRef}
-        src={resolvedSrc}
+        src={resizable ? resizedUrl(resolvedSrc, 800) : resolvedSrc}
+        srcSet={resizable ? resizedSrcSet(resolvedSrc) : undefined}
+        sizes={resizable ? sizes : undefined}
         alt={alt}
         loading={loading}
         decoding={decoding}

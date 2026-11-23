@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PublicApi } from "@/lib/publicApi";
 import { useStorefrontVersion } from "@/lib/storefrontCache";
 import ProductCard from "@/components/ProductCard";
+import CdnImage from "@/components/ui/CdnImage";
 import type { ActiveOffer } from "@/lib/offers";
 import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
 import StarRating from "@/components/ui/StarRating";
@@ -298,7 +299,7 @@ const Index = () => {
                   <DeepTilt key={cat.id} intensity={12}>
                   <Link to={`/shop?category=${encodeURIComponent(cat.name)}`} className="group relative block aspect-[4/3] overflow-hidden bg-secondary" style={{ transformStyle: "preserve-3d" }}>
                     {cat.image_url ? (
-                      <img src={resolveImageSrc(cat.image_url, 400)} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" loading="lazy" decoding="async" width={400} height={300} />
+                      <CdnImage src={cat.image_url} alt={cat.name} sizes="(min-width: 640px) 33vw, 50vw" className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]" width={400} height={300} />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-foreground/5 to-foreground/10" />
                     )}
@@ -374,7 +375,7 @@ const Index = () => {
                 <FadeSection>
                   <DeepTilt intensity={10}>
                     <div className="aspect-[4/3] overflow-hidden bg-secondary" style={{ transformStyle: "preserve-3d" }}>
-                      <img src={resolveImageSrc(brandStory.image, 800) || "/placeholder.svg"} alt="Our Story" className="w-full h-full object-cover" loading="lazy" decoding="async" width={600} height={450} />
+                      <CdnImage src={brandStory.image || "/placeholder.svg"} alt={brandStory.title || "Our story"} sizes="(min-width: 1024px) 50vw, 100vw" className="w-full h-full object-cover" width={600} height={450} />
                     </div>
                   </DeepTilt>
                 </FadeSection>
@@ -387,12 +388,11 @@ const Index = () => {
               <FadeSection>
                 <DeepTilt intensity={8}>
                   <div className="relative aspect-[4/5] sm:aspect-[16/7] lg:aspect-[16/6] overflow-hidden" style={{ transformStyle: "preserve-3d" }}>
-                    <img
-                      src={resolveImageSrc(getContent("featured_image").image, 1600)}
+                    <CdnImage
+                      src={getContent("featured_image").image}
                       alt={getContent("featured_image").section_title || "Featured"}
+                      sizes="100vw"
                       className="w-full h-full object-cover"
-                      loading="lazy"
-                      decoding="async"
                     />
                     {(getContent("featured_image").overlay ?? true) && (
                       <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-foreground/20 to-transparent" />
