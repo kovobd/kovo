@@ -1,0 +1,6 @@
+ALTER TABLE public.payment_settings ADD COLUMN IF NOT EXISTS methods jsonb;
+UPDATE public.payment_settings SET methods = jsonb_build_array(
+  jsonb_build_object('id','cod','type','cod','name','Cash on Delivery','description','Pay in cash when your order arrives.','receiver_number','','logo','','show_instructions',false,'instructions','','enabled',cod_enabled,'is_default',true),
+  jsonb_build_object('id','bkash','type','online','name','bKash','description','Send money, then place the order.','receiver_number',coalesce(bkash_number,''),'logo','','show_instructions',coalesce(payment_note,'')<>'','instructions',coalesce(payment_note,''),'enabled',bkash_enabled,'is_default',false),
+  jsonb_build_object('id','nagad','type','online','name','Nagad','description','Send money, then place the order.','receiver_number',coalesce(nagad_number,''),'logo','','show_instructions',coalesce(payment_note,'')<>'','instructions',coalesce(payment_note,''),'enabled',nagad_enabled,'is_default',false)
+) WHERE methods IS NULL;

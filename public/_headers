@@ -1,0 +1,20 @@
+# Cloudflare Workers static-assets headers.
+# Vite emits content-hashed files under /assets, so they can be cached forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Rarely-changing static images shipped in /public.
+/hero/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/products/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/categories/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/about/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/perfume/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+# The service worker must always be revalidated so new deploys roll out.
+/sw.js
+  Cache-Control: no-cache

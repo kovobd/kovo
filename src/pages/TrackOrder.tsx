@@ -1,0 +1,389 @@
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { SearchIcon, PackageIcon, TruckIcon, CheckCircleIcon, ClockIcon } from "@/components/ui/icons";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { GlobePulse } from "@/components/ui/cobe-globe-pulse";
+
+
+const statusSteps = ["pending", "confirmed", "processing", "shipped", "delivered"];
+const statusLabels: Record<string, string> = { pending: "Pending", confirmed: "Confirmed", processing: "Processing", shipped: "Shipped", delivered: "Delivered" };
+const paymentLabels: Record<string, string> = { pending: "Pending", paid: "Paid", failed: "Failed", refunded: "Refunded", cod: "Cash on Delivery" };
+const statusIcons: Record<string, any> = { pending: ClockIcon, confirmed: CheckCircleIcon, processing: PackageIcon, shipped: TruckIcon, delivered: CheckCircleIcon };
+
+const TrackOrder = () => {
+  useDocumentMeta({
+    title: "Track Your Order — Gothic Vault",
+    description: "Track your Gothic Vault order status in real time using your order number or phone number.",
+    canonicalPath: "/track-order",
+  });
+  const [searchParams] = useSearchParams();
+  const [searchValue, setSearchValue] = useState("");
+  const [searchType, setSearchType] = useState<"order" | "phone">("order");
+  const [order, setOrder] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [autoSearched, setAutoSearched] = useState(false);
+
+  const showLoadingSkeleton = useDelayedLoading(loading, 160);
+
+  useEffect(() => {
+    const prefilledOrder = searchParams.get("order");
+    if (prefilledOrder) {
+      setSearchValue(prefilledOrder);
+      setSearchType("order");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (autoSearched) return;
+    const prefilledOrder = searchParams.get("order");
+    if (prefilledOrder && prefilledOrder.trim()) {
+      setAutoSearched(true);
+      (async () => {
+        setLoading(true);
+        setError("");
+        setOrder(null);
+        setOrders([]);
+        const { data } = await supabase.rpc("track_order", { _order_number: prefilledOrder.trim() });
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!row) setError("No order found with this number");
+        else setOrder(row);
+        setLoading(false);
+      })();
+    }
+  }, [searchParams, autoSearched]);
+
+  const handleTrack = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchValue.trim()) {
+      setError("Enter your order number or phone number");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    setOrder(null);
+    setOrders([]);
+
+    if (searchType === "phone") {
+      const { data } = await supabase.rpc("track_orders_by_phone", { _phone: searchValue.trim() });
+      if (!data || data.length === 0) setError("No orders found for this phone number");
+      else if (data.length === 1) setOrder(data[0]);
+      else setOrders(data);
+    } else {
+      const { data } = await supabase.rpc("track_order", { _order_number: searchValue.trim() });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) setError("No order found with this number");
+      else setOrder(row);
+    }
+    setLoading(false);
+  };
+
+  const currentStep = order ? statusSteps.indexOf(order.order_status) : -1;
+
+  return (
+    <div className="relative overflow-hidden page-enter bg-background track-order-clean">
+      <style>{`
+        .track-order-clean .glass-card {
+          background: #17131F !important;
+          border-color: #2B2337 !important;
+          box-shadow: 0 8px 24px -12px rgba(0,0,0,0.55) !important;
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+        }
+        .track-order-clean .glass-card::before {
+          display: none !important;
+        }
+        .track-order-clean .glass-card:hover {
+          border-color: #B89AE8 !important;
+          box-shadow: 0 18px 40px -16px rgba(184,154,232,0.35) !important;
+        }
+      `}</style>
+      {/* Brand backdrop */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-background"
+      />
+
+
+      <div className="section-padding pt-12 sm:pt-16 pb-10 sm:pb-14">
+        <div className="max-w-3xl mx-auto">
+          {/* Hero title */}
+          <div className="fade-up text-center mb-3">
+            <h1 className="text-[34px] sm:text-5xl font-semibold tracking-[-0.03em] text-foreground leading-[1.05]">
+              Track Your <em className="font-display italic text-primary">Order</em>
+            </h1>
+          </div>
+          <p className="fade-up text-center text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
+            Every order has a story. Enter your details to follow its journey to your door.
+          </p>
+          <div className="fade-up max-w-[80px] mx-auto mb-10 border-t border-border/40" />
+
+          {/* Search panel */}
+          <div className="fade-up glass-card rounded-[28px] p-5 sm:p-7 mb-10 relative overflow-hidden">
+            {/* Inner shimmer hairline */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/[0.04]" />
+
+            {/* Segmented control */}
+            <div className="relative mb-5 inline-flex p-1 rounded-full border border-border/40 bg-background/40 backdrop-blur-md">
+              {(["order", "phone"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => { setSearchType(t); setSearchValue(""); setError(""); setOrder(null); setOrders([]); }}
+                  className={`relative px-5 py-2 rounded-full text-xs font-medium tracking-wide transition-all duration-300 ${
+                    searchType === t
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t === "order" ? "Order Number" : "Phone Number"}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleTrack} className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1 group">
+                <SearchIcon
+                  size={16}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/70 group-focus-within:text-primary transition-colors duration-300"
+                />
+                <Input
+                  value={searchValue}
+                  onChange={(e) => {
+                    if (searchType === "phone") setSearchValue(e.target.value.replace(/\D/g, "").slice(0, 11));
+                    else setSearchValue(e.target.value.trim());
+                  }}
+                  placeholder={searchType === "order" ? "e.g. KYF-00231" : "11-digit phone number"}
+                  className="pl-11 h-12 rounded-full bg-background/40 border-border/40 focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20 backdrop-blur-md text-sm tracking-wide"
+                  inputMode={searchType === "phone" ? "numeric" : "text"}
+                  maxLength={searchType === "phone" ? 11 : undefined}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 px-7 rounded-full bg-primary text-primary-foreground font-medium tracking-wide hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300"
+              >
+                {loading ? "Tracking…" : "Track Order"}
+              </Button>
+            </form>
+
+            {!loading && error && (
+              <p className="mt-4 text-xs text-destructive/90 tracking-wide animate-fade-in">{error}</p>
+            )}
+          </div>
+
+          {/* Cinematic globe orb (decorative only when no result yet) */}
+          {!order && orders.length === 0 && !showLoadingSkeleton && (
+            <div className="fade-up relative mx-auto w-full max-w-[340px] sm:max-w-[380px] mb-2">
+              {/* Concentric rings */}
+              <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute h-[105%] w-[105%] rounded-full border border-border/20 animate-[spin_60s_linear_infinite]" />
+                <div className="absolute h-[88%] w-[88%] rounded-full border border-border/[0.14] animate-[spin_90s_linear_infinite_reverse]" />
+              </div>
+              <GlobePulse />
+            </div>
+          )}
+
+
+          {showLoadingSkeleton && (
+            <div className="space-y-4 fade-up">
+              <div className="glass-card rounded-[28px] p-6 space-y-4">
+                <Skeleton className="h-4 w-28 mb-2" />
+                <div className="h-px bg-border/40 mb-4" />
+                <div className="flex items-center justify-between">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                      <Skeleton className="w-11 h-11 rounded-full" />
+                      <Skeleton className="h-2.5 w-14" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="glass-card rounded-[28px] p-6 space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {orders.length > 1 && !order && (
+            <div className="space-y-3 mb-6 fade-up">
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                {toBanglaDigits(orders.length)} artifacts found
+              </p>
+              {orders.map((o) => (
+                <button
+                  key={o.id}
+                  onClick={() => { setOrder(o); setOrders([]); }}
+                  className="group w-full text-left glass-card rounded-2xl p-5 hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-12px_hsl(var(--primary)/0.4)] transition-all duration-300 active:scale-[0.99]"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-foreground tracking-wide">#{o.order_number}</span>
+                    <span className="text-sm font-semibold text-foreground tabular-nums">{CURRENCY_SYMBOL}{toBanglaDigits(Number(o.total).toFixed(0))}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] uppercase tracking-[0.25em] text-primary/80">{statusLabels[o.order_status] || o.order_status}</span>
+                    <span className="text-xs text-muted-foreground">{toBanglaDigits(new Date(o.created_at).toLocaleDateString("bn-BD"))}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {order && (
+            <div className="fade-up">
+              {orders.length > 0 && (
+                <button onClick={() => setOrder(null)} className="mb-4 text-xs uppercase tracking-[0.3em] text-muted-foreground hover:text-primary transition-colors">
+                  ← Back to results
+                </button>
+              )}
+
+              {/* Unified order card */}
+              <div className="glass-card rounded-[28px] overflow-hidden">
+                {/* Hero: status + order */}
+                <div className="relative p-5 sm:p-8 border-b border-border/30">
+                  <div className="relative flex items-start justify-between gap-3 mb-6">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.32em] sm:tracking-[0.42em] text-muted-foreground font-display mb-2">Order</p>
+                      <p className="text-base sm:text-xl font-semibold tracking-tight text-foreground truncate">#{order.order_number}</p>
+                      <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">{toBanglaDigits(new Date(order.created_at).toLocaleDateString("bn-BD"))}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] uppercase tracking-[0.32em] sm:tracking-[0.42em] text-muted-foreground font-display mb-2">Total</p>
+                      <p className="text-lg sm:text-2xl font-semibold tracking-tight tabular-nums text-foreground whitespace-nowrap">
+                        {CURRENCY_SYMBOL}{toBanglaDigits(Number(order.total).toFixed(0))}
+                      </p>
+                      <span className="inline-flex items-center gap-1.5 mt-1.5 px-2 sm:px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[9px] sm:text-[10px] uppercase tracking-[0.18em] sm:tracking-[0.22em] text-primary font-medium whitespace-nowrap">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inset-0 rounded-full bg-primary/70 animate-ping" />
+                          <span className="relative rounded-full h-1.5 w-1.5 bg-primary" />
+                        </span>
+                        {statusLabels[order.order_status] || order.order_status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status stepper */}
+                  <div className="relative">
+                    <div className="absolute top-4 sm:top-[18px] left-4 sm:left-[18px] right-4 sm:right-[18px] h-px bg-border/40" />
+                    <div
+                      className="absolute top-4 sm:top-[18px] left-4 sm:left-[18px] h-px bg-primary/80 transition-all duration-700"
+                      style={{ width: currentStep > 0 ? `calc(${(currentStep / (statusSteps.length - 1)) * 100}% - ${(currentStep / (statusSteps.length - 1)) * 32}px)` : "0px" }}
+                    />
+                    <div className="relative flex items-start justify-between">
+                      {statusSteps.map((step, i) => {
+                        const Icon = statusIcons[step];
+                        const active = i <= currentStep;
+                        return (
+                          <div key={step} className="flex flex-col items-center gap-2 min-w-0">
+                            <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-500 ${
+                              active
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-background/40 border border-border/40 text-muted-foreground/60"
+                            }`}>
+                              <Icon size={13} />
+                            </div>
+                            <span className={`hidden sm:inline text-[9px] uppercase tracking-[0.22em] ${active ? "text-foreground" : "text-muted-foreground/60"}`}>
+                              {statusLabels[step]}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Mobile active label */}
+                    <p className="sm:hidden mt-3 text-center text-[10px] uppercase tracking-[0.32em] text-foreground">
+                      {statusLabels[order.order_status] || order.order_status}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="p-5 sm:p-8 border-b border-border/30">
+                  <h3 className="text-[10px] uppercase tracking-[0.42em] text-muted-foreground font-display mb-4">Artifacts</h3>
+                  <div className="divide-y divide-border/30">
+                    {(order.items || []).map((item: any, i: number) => (
+                      <div key={i} className="flex justify-between items-center gap-3 py-3 text-sm first:pt-0 last:pb-0">
+                        <span className="text-foreground tracking-wide min-w-0 break-words">
+                          {item.name}
+                          <span className="text-muted-foreground"> · ×{toBanglaDigits(item.quantity || 1)}</span>
+                        </span>
+                        <span className="text-foreground font-medium tabular-nums whitespace-nowrap shrink-0">
+                          {CURRENCY_SYMBOL}{toBanglaDigits(Number(item.price * (item.quantity || 1)).toFixed(0))}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+
+                {/* Ledger + Manifest combined */}
+                <div className="p-5 sm:p-8 grid sm:grid-cols-2 gap-x-8 gap-y-2">
+                  <div className="space-y-2.5">
+                    <h3 className="text-[10px] uppercase tracking-[0.42em] text-muted-foreground font-display mb-2">Ledger</h3>
+                    <Row label="Subtotal" value={`${CURRENCY_SYMBOL}${toBanglaDigits(Number(order.subtotal).toFixed(0))}`} />
+                    {Number(order.discount_amount) > 0 && (
+                      <Row
+                        label={`Discount${order.coupon_code ? ` (${order.coupon_code})` : ""}`}
+                        value={`-${CURRENCY_SYMBOL}${toBanglaDigits(Number(order.discount_amount).toFixed(0))}`}
+                        accent
+                      />
+                    )}
+                    <Row label="Shipping" value={`${CURRENCY_SYMBOL}${toBanglaDigits(Number(order.shipping_cost).toFixed(0))}`} />
+                    <div className="pt-2.5 mt-1 border-t border-border/40 flex justify-between items-baseline">
+                      <span className="text-[10px] uppercase tracking-[0.32em] text-muted-foreground">Total</span>
+                      <span className="text-base font-semibold tracking-tight tabular-nums text-foreground">
+                        {CURRENCY_SYMBOL}{toBanglaDigits(Number(order.total).toFixed(0))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5 mt-6 sm:mt-0 pt-6 sm:pt-0 border-t sm:border-t-0 sm:border-l border-border/40 sm:pl-8">
+                    <h3 className="text-[10px] uppercase tracking-[0.42em] text-muted-foreground font-display mb-2">Manifest</h3>
+                    <Row label="Payment" value={paymentLabels[order.payment_status] || order.payment_status} />
+                    {order.tracking_number && <Row label="Tracking" value={order.tracking_number} />}
+                    {order.steadfast_tracking_code && <Row label="Courier" value={order.steadfast_tracking_code} />}
+                    {order.steadfast_status && <Row label="Courier status" value={String(order.steadfast_status).replace(/_/g, " ")} mono />}
+                    <Row
+                      label="ETA"
+                      value={
+                        order.order_status === "delivered"
+                          ? "Delivered"
+                          : order.order_status === "shipped"
+                            ? "1–2 days"
+                            : "2–4 days"
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Row = ({ label, value, accent, mono }: { label: string; value: string; accent?: boolean; mono?: boolean }) => (
+  <div className="flex justify-between items-center text-sm">
+    <span className="text-[11px] uppercase tracking-[0.22em] text-muted-foreground">{label}</span>
+    <span className={`${accent ? "text-primary" : "text-foreground"} ${mono ? "capitalize" : ""} font-medium tabular-nums tracking-wide`}>
+      {value}
+    </span>
+  </div>
+);
+
+export default TrackOrder;

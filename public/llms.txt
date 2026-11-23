@@ -1,0 +1,17 @@
+# Gothic Vault
+
+> Gothic Vault — Goth Accessories. An online store specialising in gothic jewellery, chokers, rings, bat & skull pendants, and dark alternative fashion.
+
+## Pages
+
+- [Home](/): Featured collections, hero stories, and brand highlights.
+- [Shop](/shop): Browse the full catalog of goth accessories and gothic jewellery.
+- [About](/about): Brand story and the people behind Gothic Vault.
+- [Contact](/contact): Get in touch via email, phone, or WhatsApp.
+- [Track Order](/track-order): Track an order by order number or phone.
+- [Policies](/policies): Shipping, returns, privacy, and terms.
+
+## Optional
+
+- [Cart](/cart): Current shopping cart.
+- [Checkout](/checkout): Place an order.

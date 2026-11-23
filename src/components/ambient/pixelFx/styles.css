@@ -1,0 +1,403 @@
+/* ============================================================
+   Gothic Vault — Pixel FX shared styles
+   Keep all keyframes/utilities in one place so every effect
+   shares the same design language: pixel-crisp rendering,
+   consistent easing, GPU-friendly transforms.
+   ============================================================ */
+
+.pxfx-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+.pxfx-root--top { z-index: 90; }
+
+.pxfx-crisp {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+/* --- Ambient ------------------------------------------------ */
+@keyframes pxfx-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.15); }
+}
+@keyframes pxfx-drift {
+  0%   { transform: translate3d(-6vw, 0, 0); }
+  100% { transform: translate3d(106vw, 0, 0); }
+}
+@keyframes pxfx-drift-slow {
+  0%   { transform: translate3d(0, 0, 0); }
+  50%  { transform: translate3d(2vw, -1vw, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes pxfx-ember-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+  10%  { opacity: 0.9; }
+  100% { transform: translate3d(var(--dx, 0), -110vh, 0) scale(0.6); opacity: 0; }
+}
+@keyframes pxfx-raven-flap {
+  0%,100% { transform: scaleY(1); }
+  50%     { transform: scaleY(0.55); }
+}
+
+/* --- Page transition --------------------------------------- */
+@keyframes pxfx-smoke-in {
+  0%   { opacity: 0; }
+  35%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes pxfx-flash {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.35; }
+  100% { opacity: 0; }
+}
+
+
+/* --- Cursor / hover ---------------------------------------- */
+@keyframes pxfx-spark-out {
+  0%   { opacity: 0.9; transform: translate3d(0,0,0) scale(1); }
+  100% { opacity: 0;   transform: translate3d(var(--dx,0), var(--dy,-8px), 0) scale(0.4); }
+}
+
+/* --- Fly to cart ------------------------------------------- */
+@keyframes pxfx-fly {
+  0%   { transform: translate3d(var(--fx,0), var(--fy,0), 0) scale(1); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate3d(var(--tx,0), var(--ty,0), 0) scale(0.35); opacity: 0; }
+}
+@keyframes pxfx-pulse-target {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.25); filter: drop-shadow(0 0 6px #fff); }
+}
+
+/* --- Sparkle / puff ---------------------------------------- */
+@keyframes pxfx-puff {
+  0%   { opacity: 0; transform: scale(0.4); }
+  30%  { opacity: 0.75; }
+  100% { opacity: 0; transform: scale(1.8); }
+}
+@keyframes pxfx-sparkle {
+  0%,100% { opacity: 0; transform: scale(0.4) rotate(0); }
+  50%     { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+
+/* --- Thunder / broken glass -------------------------------- */
+@keyframes pxfx-thunder-flash {
+  0%,100% { opacity: 0; }
+  5%      { opacity: 0.9; }
+  10%     { opacity: 0.1; }
+  15%     { opacity: 0.75; }
+  25%     { opacity: 0; }
+}
+@keyframes pxfx-bolt-draw {
+  from { stroke-dashoffset: 200; opacity: 0; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes pxfx-glass {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- Vault / portal ---------------------------------------- */
+@keyframes pxfx-portal {
+  0%   { transform: scale(0.1) rotate(0);   opacity: 0; }
+  40%  { transform: scale(1.05) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1.4) rotate(360deg); opacity: 0; }
+}
+@keyframes pxfx-vault-open {
+  0%   { transform: translateX(0); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes pxfx-vault-open-r {
+  0%   { transform: translateX(0); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+@keyframes pxfx-vault-lock {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+  25%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  70%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+
+/* --- Confetti ---------------------------------------------- */
+@keyframes pxfx-confetti {
+  0%   { transform: translate3d(0,-10vh,0) rotate(0); opacity: 1; }
+  100% { transform: translate3d(var(--cx,0), 110vh, 0) rotate(720deg); opacity: 0; }
+}
+
+/* --- Candle flicker (loader) ------------------------------- */
+@keyframes pxfx-candle {
+  0%,100% { transform: scaleY(1)   translateY(0); }
+  25%     { transform: scaleY(1.15) translateY(-1px); }
+  50%     { transform: scaleY(0.9)  translateY(1px); }
+  75%     { transform: scaleY(1.05) translateY(0); }
+}
+@keyframes pxfx-orbit {
+  from { transform: rotate(0) translateX(14px) rotate(0); }
+  to   { transform: rotate(360deg) translateX(14px) rotate(-360deg); }
+}
+
+/* --- Ghost float (404) ------------------------------------- */
+@keyframes pxfx-float {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(-6px); }
+}
+
+/* --- Fog --------------------------------------------------- */
+@keyframes pxfx-fog {
+  0%   { transform: translate3d(-10%, 0, 0); opacity: 0.0; }
+  30%  { opacity: 0.5; }
+  100% { transform: translate3d(10%, 0, 0); opacity: 0; }
+}
+
+/* --- Gothic Vault cinematic atmosphere --------------------- */
+@keyframes gv-intro-fadeout {
+  0%, 60% { opacity: 1; }
+  100%    { opacity: 0; visibility: hidden; }
+}
+@keyframes gv-intro-fog {
+  0%   { opacity: 0; transform: scale(1.1); }
+  40%  { opacity: 1; }
+  100% { opacity: 0.4; transform: scale(1); }
+}
+@keyframes gv-intro-glass {
+  0%   { opacity: 0; transform: scale(0.6); }
+  25%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+@keyframes gv-intro-shard {
+  0%   { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--sx,0), 60vh, 0) rotate(180deg); }
+}
+@keyframes gv-intro-logo {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.94); filter: blur(6px); }
+  40%  { opacity: 1; filter: blur(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.02); }
+}
+@keyframes gv-fog-drift-a {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0.75; }
+  50%  { opacity: 1; }
+  100% { transform: translate3d(30%, -2%, 0); opacity: 0.75; }
+}
+@keyframes gv-fog-drift-b {
+  0%   { transform: translate3d(0, 0, 0); opacity: 0.6; }
+  50%  { opacity: 0.9; }
+  100% { transform: translate3d(-25%, 3%, 0); opacity: 0.6; }
+}
+@keyframes gv-lightning {
+  0%     { opacity: 0; }
+  3%     { opacity: 0.9; }
+  6%     { opacity: 0.15; }
+  10%    { opacity: 0.75; }
+  18%    { opacity: 0.05; }
+  100%   { opacity: 0; }
+}
+@keyframes gv-cart-shake {
+  0%,100% { transform: translate3d(0,0,0); }
+  25%     { transform: translate3d(-2px, 1px, 0) rotate(-2deg); }
+  50%     { transform: translate3d(2px, -1px, 0) rotate(2deg); }
+  75%     { transform: translate3d(-1px, 0, 0) rotate(-1deg); }
+}
+.gv-cart-shake { animation: gv-cart-shake 400ms ease-out; }
+.gv-cart-glow {
+  animation: gv-cart-glow 650ms ease-out;
+}
+@keyframes gv-cart-glow {
+  0%,100% { filter: none; }
+  50%     { filter: drop-shadow(0 0 8px rgba(247,244,255,0.9)) drop-shadow(0 0 14px rgba(184,154,232,0.7)); }
+}
+@keyframes gv-soul-smoke {
+  0%   { opacity: 0; transform: translate3d(0,0,0) scale(0.6); }
+  20%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate3d(var(--tx,0), var(--ty,-40px), 0) scale(0.2); }
+}
+
+/* --- 500ms page transition (smoke dissolve) ---------------- */
+@keyframes gv-page-smoke {
+  0%   { opacity: 0; transform: scale(1.08); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+/* --- Fog scroll-reveal (IntersectionObserver driven) ------- */
+.gv-smoke-reveal {
+  position: relative;
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 700ms cubic-bezier(0.22,1,0.36,1), transform 700ms cubic-bezier(0.22,1,0.36,1);
+  will-change: opacity, transform;
+}
+.gv-smoke-reveal.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+.gv-smoke-reveal::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(199,189,217,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 60%, rgba(184,154,232,0.18) 0%, transparent 60%);
+  filter: blur(20px);
+  mix-blend-mode: screen;
+  will-change: opacity, transform;
+}
+.gv-smoke-reveal.is-in::before {
+  animation: gv-reveal-fog 1200ms cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes gv-reveal-fog {
+  0%   { opacity: 0; transform: translate3d(0, 10px, 0) scale(1.05); }
+  35%  { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(0, -6px, 0) scale(1); }
+}
+/* Tiny ash sparks that drift up during a reveal — pure pseudo-el */
+.gv-smoke-reveal::after {
+  content: "";
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 0;
+  height: 40%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  background:
+    radial-gradient(circle at 15% 80%, rgba(247,244,255,0.7) 0.5px, transparent 1.5px),
+    radial-gradient(circle at 45% 60%, rgba(199,189,217,0.6) 0.5px, transparent 1.5px),
+    radial-gradient(circle at 75% 85%, rgba(247,244,255,0.5) 0.5px, transparent 1.5px),
+    radial-gradient(circle at 90% 55%, rgba(199,189,217,0.55) 0.5px, transparent 1.5px);
+  background-size: 100% 100%;
+  will-change: opacity, transform;
+}
+.gv-smoke-reveal.is-in::after {
+  animation: gv-reveal-ash 1600ms ease-out forwards;
+}
+@keyframes gv-reveal-ash {
+  0%   { opacity: 0; transform: translate3d(0, 20px, 0); }
+  30%  { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(0, -40px, 0); }
+}
+
+/* --- Smoke materialize (cart page & drawer-style panels) --- */
+@keyframes gv-materialize {
+  0%   { opacity: 0; transform: translate3d(0, 10px, 0) scale(0.985); filter: blur(10px); }
+  40%  { opacity: 1; filter: blur(2px); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+.gv-smoke-materialize {
+  animation: gv-materialize 520ms cubic-bezier(0.22,1,0.36,1) both;
+  position: relative;
+}
+.gv-smoke-materialize::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(11,9,16,0.75) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 40%, rgba(30,20,45,0.7) 0%, transparent 60%);
+  filter: blur(14px);
+  animation: gv-materialize-veil 620ms cubic-bezier(0.4,0,0.2,1) forwards;
+  mix-blend-mode: normal;
+}
+@keyframes gv-materialize-veil {
+  0%   { opacity: 1; transform: scale(1); }
+  60%  { opacity: 0.35; }
+  100% { opacity: 0; transform: scale(1.05); visibility: hidden; }
+}
+/* Sequenced fade-in for children marked .gv-smoke-item */
+.gv-smoke-materialize .gv-smoke-item {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  animation: gv-smoke-item 460ms cubic-bezier(0.22,1,0.36,1) forwards;
+  animation-delay: calc(var(--i, 0) * 70ms + 180ms);
+}
+@keyframes gv-smoke-item {
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* --- Product card hover: silver border glow + soft title glow --- */
+.group:hover .gv-card-title {
+  text-shadow: 0 0 10px rgba(247,244,255,0.28), 0 0 20px rgba(184,154,232,0.22);
+  transition: text-shadow 260ms cubic-bezier(0.22,1,0.36,1);
+}
+.gv-card-ash { display: none !important; }
+
+/* --- Product image hover: vignette + faint rising smoke --- */
+.gv-img-wrap {
+  transition: transform 320ms cubic-bezier(0.22,1,0.36,1);
+  will-change: transform;
+}
+.gv-img-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(5,5,5,0.45) 100%);
+  transition: opacity 280ms ease-out;
+  will-change: opacity;
+}
+.group:hover .gv-img-vignette { opacity: 1; }
+.gv-img-smoke {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10%;
+  height: 45%;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 3;
+  background: radial-gradient(ellipse at 50% 100%, rgba(199,189,217,0.28) 0%, rgba(184,154,232,0.12) 40%, transparent 70%);
+  filter: blur(16px);
+  transform: translate3d(0, 15%, 0);
+  transition: opacity 340ms cubic-bezier(0.22,1,0.36,1), transform 800ms cubic-bezier(0.22,1,0.36,1);
+  will-change: opacity, transform;
+}
+.group:hover .gv-img-smoke {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* --- Ambient moon flicker + raven glide --------------------- */
+@keyframes gv-moon-flicker {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  40%      { opacity: 1;   transform: scale(1.02); }
+  55%      { opacity: 0.82; transform: scale(0.99); }
+  70%      { opacity: 0.95; transform: scale(1.01); }
+}
+@keyframes gv-raven-glide {
+  0%   { transform: translate3d(-10vw, 0, 0); }
+  50%  { transform: translate3d(50vw, -18px, 0); }
+  100% { transform: translate3d(110vw, 0, 0); }
+}
+@keyframes gv-raven-flap {
+  0%, 100% { transform: scaleX(var(--dir,1)) scaleY(1); }
+  50%      { transform: scaleX(var(--dir,1)) scaleY(0.72); }
+}
+
+/* Reduced-motion honours the user preference for every FX. */
+@media (prefers-reduced-motion: reduce) {
+  .pxfx-root, .pxfx-root--top { display: none !important; }
+  .gv-smoke-reveal { opacity: 1; transform: none; }
+  .gv-smoke-reveal::before, .gv-smoke-reveal::after { display: none; }
+  .gv-smoke-materialize { animation: none; }
+  .gv-smoke-materialize::before { display: none; }
+  .gv-smoke-materialize .gv-smoke-item { opacity: 1; transform: none; animation: none; }
+  .gv-img-smoke, .gv-img-vignette { display: none; }
+}
+
+

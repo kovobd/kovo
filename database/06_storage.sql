@@ -1,0 +1,8 @@
+-- =========================================================
+-- 06: STORAGE
+-- This project stores binary assets in Cloudflare R2 via Edge Functions.
+-- No Supabase Storage buckets are required for portability.
+-- If you wish to use Supabase Storage as well, create buckets here:
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('media','media', true)
+--   ON CONFLICT (id) DO NOTHING;
+-- =========================================================

@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-06-30T07:44:34.780671Z",
+  "contains_seed_data": false,
+  "files": {
+    "full_setup.sql": "Single-file installer (run on fresh Supabase project)",
+    "01_extensions.sql": "Postgres extensions + enums",
+    "02_schema.sql": "Sequences, tables, constraints, indexes",
+    "03_functions.sql": "Functions + views",
+    "04_triggers.sql": "Triggers",
+    "05_policies.sql": "RLS policies + grants",
+    "06_storage.sql": "Optional Supabase Storage notes (project uses Cloudflare R2)"
+  }
+}

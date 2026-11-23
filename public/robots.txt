@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth
+Disallow: /auth/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-confirmation
+Disallow: /track-order?
+Disallow: /*?utm_*
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
+
+# Live, always-fresh sitemap served from our own domain (proxied by the
+# Cloudflare Worker to the Supabase Edge Function, which renders from the DB
+# on every request). Product/category/policy changes are reflected immediately.
+Sitemap: https://gothicvault.shop/sitemap.xml

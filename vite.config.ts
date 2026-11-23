@@ -1,0 +1,55 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+
+export default defineConfig(() => ({
+  server: {
+    host: "::",
+    port: 8080,
+    hmr: {
+      overlay: false,
+    },
+  },
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    dedupe: ["react", "react-dom", "react/jsx-runtime"],
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom", "react/jsx-runtime", "react-router-dom", "@tanstack/react-query"],
+  },
+  build: {
+    target: "es2020",
+    cssMinify: true,
+    minify: "esbuild",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          // Only group libraries that are TRUE entry-graph deps. Grouping
+          // admin-only libs (recharts/d3-, react-easy-crop, @dnd-kit,
+          // date-fns, lucide-react) into their own chunk causes Rollup's
+          // shared CJS-interop helpers to be lifted into that chunk, which
+          // then becomes a static dep of the public entry — a costly leak.
+          // Let those admin libs colocate with the admin route chunks that
+          // lazy-load them.
+          //
+          // Radix is NOT chunked here: only @radix-ui/react-slot is used
+          // eagerly (via Button); the other 20+ primitives live behind
+          // lazy routes. Grouping them all forced Rollup to preload ~85KB
+          // gzip of unused Radix code on every homepage visit. Letting
+          // Rollup decide colocates each primitive with the chunks that
+          // actually import it.
+          if (id.includes("@tanstack")) return "query";
+          if (id.includes("react-router")) return "router";
+          if (id.includes("embla-carousel")) return "embla";
+          if (id.includes("@supabase")) return "supabase";
+        },
+
+      },
+
+    },
+  },
+}));
