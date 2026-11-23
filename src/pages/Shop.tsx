@@ -8,6 +8,7 @@ import { SearchIcon, ChevronDownIcon, TagIcon, SlidersIcon, XIcon } from "@/comp
 import { trackSearch } from "@/lib/trackingEvents";
 import { PublicApi } from "@/lib/publicApi";
 import { useStorefrontVersion } from "@/lib/storefrontCache";
+import { normalizeSort } from "@/lib/shopSort";
 import ProductCard from "@/components/ProductCard";
 import type { ActiveOffer } from "@/lib/offers";
 import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
@@ -62,7 +63,7 @@ const Shop = () => {
       settings: {
         search_enabled: settings.search_enabled !== false,
         sorting_enabled: settings.sorting_enabled !== false,
-        default_sorting: settings.default_sorting || "featured",
+        default_sorting: normalizeSort(settings.default_sorting),
         card_cta_mode: settings.card_cta_mode || "view_details",
       },
       activeOffers: ((home as any)?.activeOffers ?? []) as ActiveOffer[],
@@ -81,7 +82,7 @@ const Shop = () => {
 
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState(settings.default_sorting || "featured");
+  const [sort, setSort] = useState<string>(settings.default_sorting || "featured");
   const [category, setCategory] = useState(() => searchParams.get("category") || "All");
   const [brand, setBrand] = useState(() => searchParams.get("brand") || "All");
   const [availability, setAvailability] = useState<Availability>("all");

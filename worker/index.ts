@@ -59,6 +59,57 @@ const EDGE_FRESH_SECONDS: Record<string, number> = {
 };
 const EDGE_KEEP_SECONDS = 86400; // serve stale up to a day while refreshing
 const STORED_AT = "x-kovo-stored-at";
+const STORED_VERSION = "x-kovo-content-version";
+
+// ── Storefront content version ─────────────────────────────────────────────
+// A database trigger bumps public.storefront_version on every write to a table
+// the public-* functions read (shop settings, products, homepage, …). The
+// Worker checks it every few seconds; a cached copy stored under an older
+// version is never served, so admin edits reach every visitor right away.
+const VERSION_CHECK_MS = 5000;
+let versionMemo: { value: string | null; at: number } = { value: null, at: 0 };
+let versionInflight: Promise<string | null> | null = null;
+
+async function readContentVersion(env: Env): Promise<string | null> {
+  const base = (env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, "");
+  const key = env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 1500);
+  try {
+    const res = await fetch(`${base}/rest/v1/storefront_version?id=eq.1&select=version`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ version: number | string }>;
+    return rows?.[0]?.version != null ? String(rows[0].version) : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Current content version (memoised per isolate for a few seconds); null if unknown. */
+async function contentVersion(env: Env): Promise<string | null> {
+  if (Date.now() - versionMemo.at < VERSION_CHECK_MS) return versionMemo.value;
+  if (!versionInflight) {
+    versionInflight = readContentVersion(env)
+      .then((v) => {
+        // Keep the last known value if the check fails, rather than forgetting it.
+        versionMemo = { value: v ?? versionMemo.value, at: Date.now() };
+        return versionMemo.value;
+      })
+      .finally(() => { versionInflight = null; });
+  }
+  return versionInflight;
+}
+
+/** True if a cached copy was stored under an older content version. */
+function isOutdated(cached: Response, current: string | null): boolean {
+  if (!current) return false;
+  return cached.headers.get(STORED_VERSION) !== current;
+}
 
 async function fetchUpstream(env: Env, fn: string, search: string): Promise<Response> {
   const base = (env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, "");
@@ -68,13 +119,14 @@ async function fetchUpstream(env: Env, fn: string, search: string): Promise<Resp
   });
 }
 
-async function storeInCache(cache: Cache, cacheKey: Request, upstream: Response): Promise<Response> {
+async function storeInCache(cache: Cache, cacheKey: Request, upstream: Response, version: string | null): Promise<Response> {
   const body = await upstream.arrayBuffer();
   const headers = new Headers({
     "Content-Type": upstream.headers.get("Content-Type") || "application/json; charset=utf-8",
     "Cache-Control": `public, max-age=${EDGE_KEEP_SECONDS}`,
     [STORED_AT]: String(Date.now()),
   });
+  if (version) headers.set(STORED_VERSION, version);
   await cache.put(cacheKey, new Response(body, { status: 200, headers }));
   return new Response(body, { status: 200, headers });
 }
@@ -82,8 +134,10 @@ async function storeInCache(cache: Cache, cacheKey: Request, upstream: Response)
 function clientResponse(res: Response, state: string): Response {
   const headers = new Headers(res.headers);
   headers.delete(STORED_AT);
-  // Browsers may reuse it for a minute; the edge copy does the heavy lifting.
-  headers.set("Cache-Control", "public, max-age=60, stale-while-revalidate=600");
+  headers.delete(STORED_VERSION);
+  // Browsers revalidate every time (the edge answers in milliseconds), so a
+  // visitor never keeps showing data the admin has already changed.
+  headers.set("Cache-Control", "no-cache");
   headers.set("X-Kovo-Cache", state);
   return new Response(res.body, { status: res.status, headers });
 }
@@ -95,14 +149,14 @@ async function proxyPublicApi(env: Env, ctx: ExecutionContext, fn: string, url: 
   const search = params.length ? `?${new URLSearchParams(params).toString()}` : "";
   const cacheKey = new Request(`${url.origin}/api/public/${fn}${search}`, { method: "GET" });
 
-  const cached = await cache.match(cacheKey);
-  if (cached) {
+  const [cached, version] = await Promise.all([cache.match(cacheKey), contentVersion(env)]);
+  if (cached && !isOutdated(cached, version)) {
     const storedAt = Number(cached.headers.get(STORED_AT) || 0);
     const ageSeconds = (Date.now() - storedAt) / 1000;
     if (ageSeconds > (EDGE_FRESH_SECONDS[fn] ?? 120)) {
       ctx.waitUntil(
         fetchUpstream(env, fn, search)
-          .then((r) => (r.ok ? storeInCache(cache, cacheKey, r) : undefined))
+          .then((r) => (r.ok ? storeInCache(cache, cacheKey, r, version) : undefined))
           .catch(() => undefined),
       );
       return clientResponse(cached, "STALE");
@@ -110,14 +164,17 @@ async function proxyPublicApi(env: Env, ctx: ExecutionContext, fn: string, url: 
     return clientResponse(cached, "HIT");
   }
 
-  const upstream = await fetchUpstream(env, fn, search);
-  if (!upstream.ok) {
-    return new Response(upstream.body, {
-      status: upstream.status,
+  // No copy, or the admin changed something since it was stored: fetch now.
+  const upstream = await fetchUpstream(env, fn, search).catch(() => null);
+  if (!upstream || !upstream.ok) {
+    // Supabase unreachable: an outdated copy beats an error page.
+    if (cached) return clientResponse(cached, "OUTDATED");
+    return new Response(upstream ? upstream.body : '{"error":"upstream unreachable"}', {
+      status: upstream ? upstream.status : 502,
       headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
     });
   }
-  const fresh = await storeInCache(cache, cacheKey, upstream);
+  const fresh = await storeInCache(cache, cacheKey, upstream, version);
   return clientResponse(fresh, "MISS");
 }
 
@@ -140,18 +197,31 @@ function routeData(pathname: string): { fn: string; search: string }[] {
   return out;
 }
 
-/** Cached JSON text for a public function, or null on a miss (refreshed in the background). */
+/**
+ * Cached JSON text for a public function, or null on a miss or when the copy
+ * predates the latest admin change (refreshed in the background; the app then
+ * fetches it from /api/public itself, which waits for the fresh copy).
+ */
 async function cachedPublicText(env: Env, ctx: ExecutionContext, origin: string, fn: string, search: string): Promise<string | null> {
   const cache = caches.default;
   const cacheKey = new Request(`${origin}/api/public/${fn}${search}`, { method: "GET" });
-  const cached = await cache.match(cacheKey);
+  // Wait briefly for the version check; if it is slow, skip inlining rather
+  // than risk inlining data the admin has already changed.
+  const SLOW = Symbol("slow");
+  const versionOrSlow = Promise.race([
+    contentVersion(env),
+    new Promise<typeof SLOW>((r) => setTimeout(() => r(SLOW), 400)),
+  ]);
+  const [cached, versionResult] = await Promise.all([cache.match(cacheKey), versionOrSlow]);
+  if (versionResult === SLOW) return null;
+  const version = versionResult;
   const refresh = () =>
     ctx.waitUntil(
       fetchUpstream(env, fn, search)
-        .then((r) => (r.ok ? storeInCache(cache, cacheKey, r) : undefined))
+        .then((r) => (r.ok ? storeInCache(cache, cacheKey, r, version) : undefined))
         .catch(() => undefined),
     );
-  if (!cached) { refresh(); return null; }
+  if (!cached || isOutdated(cached, version)) { refresh(); return null; }
   const ageSeconds = (Date.now() - Number(cached.headers.get(STORED_AT) || 0)) / 1000;
   if (ageSeconds > (EDGE_FRESH_SECONDS[fn] ?? 120)) refresh();
   return cached.text();

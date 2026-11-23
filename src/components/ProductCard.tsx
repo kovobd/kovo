@@ -86,6 +86,13 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
   const showAddToCart = cardButtons?.showAddToCart !== false;
   const showBuyNow = cardButtons?.showBuyNow !== false;
   const anyButton = showViewDetails || showAddToCart || showBuyNow;
+  const primary = cardButtons?.primary ?? "view_details";
+  // Admin "Primary card button": filled when it is the only strong action,
+  // outlined in the foreground colour when Buy now is the filled button.
+  const primaryCls = showBuyNow
+    ? "border border-foreground text-foreground hover:bg-foreground hover:text-background"
+    : "bg-foreground text-background border border-foreground hover:bg-foreground/85";
+  const secondaryCls = "border border-border text-foreground hover:border-foreground";
 
   const prefetchProduct = useCallback(() => {
     // Prefetch the EXACT same payload PDP expects, so navigation is instant
@@ -210,6 +217,26 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
     addItem({ id: product.id, productId: product.id, name: product.name, price: currentPrice, image: mainImage });
     navigate("/checkout");
   };
+
+  const detailsButton = showViewDetails ? (
+    <button
+      onClick={(e) => { e.preventDefault(); navigate(`/product/${product.slug}`); }}
+      className={`h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center ${primary === "view_details" ? primaryCls : secondaryCls}`}
+      aria-label="View details"
+    >
+      <span className="hidden lg:inline">View details</span><span className="lg:hidden">Details</span>
+    </button>
+  ) : null;
+  const cartButton = showAddToCart ? (
+    <button
+      onClick={handleAddToCart}
+      disabled={isOutOfStock}
+      className={`h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${primary === "add_to_cart" ? primaryCls : secondaryCls}`}
+      aria-label="Add to cart"
+    >
+      {addedFeedback ? <>✓ Added</> : <><ShoppingBagIcon size={12} /> <span className="hidden lg:inline">Add to cart</span><span className="lg:hidden">Add</span></>}
+    </button>
+  ) : null;
 
   return (
     <Link ref={(node) => { linkRef.current = node; if (typeof ref === "function") ref(node); else if (ref) (ref as any).current = node; }} to={`/product/${product.slug}`} className="group block" onMouseEnter={prefetchProduct} onTouchStart={prefetchProduct}>
@@ -358,25 +385,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
             <div className="mt-auto flex flex-col gap-2">
               {(showViewDetails || showAddToCart) && (
                 <div className={`grid gap-2 ${showViewDetails && showAddToCart ? "grid-cols-2" : "grid-cols-1"}`}>
-                  {showViewDetails && (
-                    <button
-                      onClick={(e) => { e.preventDefault(); navigate(`/product/${product.slug}`); }}
-                      className="h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center border border-border text-foreground hover:border-foreground"
-                      aria-label="View details"
-                    >
-                      <span className="hidden lg:inline">View details</span><span className="lg:hidden">Details</span>
-                    </button>
-                  )}
-                  {showAddToCart && (
-                    <button
-                      onClick={handleAddToCart}
-                      disabled={isOutOfStock}
-                      className="h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1.5 border border-foreground text-foreground hover:bg-foreground hover:text-background disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label="Add to cart"
-                    >
-                      {addedFeedback ? <>✓ Added</> : <><ShoppingBagIcon size={12} /> <span className="hidden lg:inline">Add to cart</span><span className="lg:hidden">Add</span></>}
-                    </button>
-                  )}
+                  {primary === "add_to_cart" ? <>{cartButton}{detailsButton}</> : <>{detailsButton}{cartButton}</>}
                 </div>
               )}
               {showBuyNow && (

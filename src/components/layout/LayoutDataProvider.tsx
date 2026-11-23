@@ -31,7 +31,7 @@ interface LayoutData {
   footer: FooterData | null;
   floatingIcons: { id: string; label: string; url: string; icon_url: string | null; bg_color: string; icon_color?: string; preset_key?: string | null; sort_order: number; enabled: boolean }[];
   floatingSettings: { enabled: boolean; radar_animation: boolean; expand_icon_url: string | null; animation_style?: string; animation_intensity?: string } | null;
-  cardButtons: { showViewDetails: boolean; showAddToCart: boolean; showBuyNow: boolean };
+  cardButtons: { showViewDetails: boolean; showAddToCart: boolean; showBuyNow: boolean; primary: "view_details" | "add_to_cart" };
   directOrderChannels: { id: string; enabled: boolean; label: string; identifier: string; message_template: string; sort_order: number }[];
   loaded: boolean;
 }
@@ -47,7 +47,7 @@ const LayoutDataContext = createContext<LayoutData>({
   footer: null,
   floatingIcons: [],
   floatingSettings: null,
-  cardButtons: { showViewDetails: true, showAddToCart: true, showBuyNow: true },
+  cardButtons: { showViewDetails: true, showAddToCart: true, showBuyNow: true, primary: "view_details" },
   directOrderChannels: [],
   loaded: false,
 });
@@ -165,6 +165,7 @@ export const LayoutDataProvider = ({ children }: { children: ReactNode }) => {
       showViewDetails: shop.card_show_view_details !== false,
       showAddToCart: shop.card_show_add_to_cart !== false,
       showBuyNow: shop.card_show_buy_now !== false,
+      primary: shop.card_cta_mode === "add_to_cart" ? "add_to_cart" : "view_details",
     },
     directOrderChannels: (layout as any)?.directOrderChannels ?? [],
     loaded,

@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Section, FormRow, StickyActionBar } from "@/components/admin/ui";
 import { useDirtyForm } from "@/hooks/useDirtyForm";
 import { bumpStorefrontVersion } from "@/lib/storefrontCache";
+import { normalizeSort } from "@/lib/shopSort";
 
 const ShopSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
   const [settings, setSettings] = useState<any>(null);
@@ -73,12 +74,13 @@ const ShopSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
             <Switch checked={settings.sorting_enabled} onCheckedChange={(v) => setSettings({ ...settings, sorting_enabled: v })} />
           </FormRow>
           <FormRow label="Default sorting">
-            <Select value={settings.default_sorting} onValueChange={(v) => setSettings({ ...settings, default_sorting: v })}>
+            <Select value={normalizeSort(settings.default_sorting)} onValueChange={(v) => setSettings({ ...settings, default_sorting: v })}>
               <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="newest">New</SelectItem>
-                <SelectItem value="price_low">Price: low to high</SelectItem>
-                <SelectItem value="price_high">Price: high to low</SelectItem>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="price-asc">Price: low to high</SelectItem>
+                <SelectItem value="price-desc">Price: high to low</SelectItem>
               </SelectContent>
             </Select>
           </FormRow>
