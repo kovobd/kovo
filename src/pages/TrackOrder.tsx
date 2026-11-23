@@ -8,7 +8,6 @@ import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { GlobePulse } from "@/components/ui/cobe-globe-pulse";
 
 
 const statusSteps = ["pending", "confirmed", "processing", "shipped", "delivered"];
@@ -117,11 +116,11 @@ const TrackOrder = () => {
           {/* Hero title */}
           <div className="fade-up text-center mb-3">
             <h1 className="text-[34px] sm:text-5xl font-semibold tracking-[-0.03em] text-foreground leading-[1.05]">
-              Track Your <em className="font-display italic text-primary">Order</em>
+              Track your order
             </h1>
           </div>
           <p className="fade-up text-center text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
-            Every order has a story. Enter your details to follow its journey to your door.
+            Enter your order number or the phone number you ordered with to see where your order is.
           </p>
           <div className="fade-up max-w-[80px] mx-auto mb-10 border-t border-border/40" />
 
@@ -180,17 +179,6 @@ const TrackOrder = () => {
             )}
           </div>
 
-          {/* Cinematic globe orb (decorative only when no result yet) */}
-          {!order && orders.length === 0 && !showLoadingSkeleton && (
-            <div className="fade-up relative mx-auto w-full max-w-[340px] sm:max-w-[380px] mb-2">
-              {/* Concentric rings */}
-              <div aria-hidden className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="absolute h-[105%] w-[105%] rounded-full border border-border/20 animate-[spin_60s_linear_infinite]" />
-                <div className="absolute h-[88%] w-[88%] rounded-full border border-border/[0.14] animate-[spin_90s_linear_infinite_reverse]" />
-              </div>
-              <GlobePulse />
-            </div>
-          )}
 
 
           {showLoadingSkeleton && (

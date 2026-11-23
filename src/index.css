@@ -479,3 +479,30 @@ footer { contain: layout style; }
     .gv-page-fade, .announcement-marquee { animation: none !important; }
   }
 }
+
+/* ============================================================
+   Kovo — one corner style across the storefront.
+   Panels, photos, inputs and text buttons share the 2px corner; true
+   circles (fixed-size icon buttons, swatches, count badges) stay round.
+   Scoped to .kovo-store so the admin keeps its own look.
+   ============================================================ */
+@layer utilities {
+  .kovo-store :is(.rounded-sm, .rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl, [class*="rounded-["]) {
+    border-radius: 2px;
+  }
+  .kovo-store :is([class*="rounded-t-"]) { border-top-left-radius: 2px; border-top-right-radius: 2px; }
+  .kovo-store .rounded-full:not([class*="w-"][class*="h-"]):not([class*="size-"]),
+  .kovo-store :is(input, textarea, select).rounded-full,
+  .kovo-store .rounded-full[class*="w-full"] {
+    border-radius: 2px;
+  }
+}
+
+/* Hero entrance — the hero text rises in once on load */
+@layer utilities {
+  .kovo-enter > * { animation: kovo-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .kovo-enter > *:nth-child(2) { animation-delay: 90ms; }
+  .kovo-enter > *:nth-child(3) { animation-delay: 180ms; }
+  @keyframes kovo-rise { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .kovo-enter > * { animation: none; } }
+}

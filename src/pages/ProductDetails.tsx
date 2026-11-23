@@ -438,7 +438,7 @@ const ProductDetails = () => {
       <ProductEntrance />
       {/* Back link (above grid so right column aligns with image top) */}
       <div className="section-padding pt-3 pb-2 sm:pt-4 sm:pb-3 lg:pt-4 lg:pb-3">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1320px] mx-auto">
           <Link to="/shop" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeftIcon size={16} /> Back to shop
           </Link>
@@ -448,9 +448,9 @@ const ProductDetails = () => {
       <div className="fade-up">
         {/* Main product grid */}
         <div className="section-padding pb-6 sm:pb-10">
-          <div className="grid lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1fr)] gap-5 sm:gap-6 lg:gap-8 max-w-[1200px] mx-auto items-start lg:items-stretch">
+          <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-5 sm:gap-6 lg:gap-14 max-w-[1320px] mx-auto items-start lg:items-stretch">
             {/* Images */}
-            <div className="md:max-w-[460px] lg:max-w-[560px] mx-auto w-full order-1 lg:order-1 lg:self-stretch">
+            <div className="md:max-w-[560px] lg:max-w-none mx-auto w-full order-1 lg:order-1 lg:self-stretch">
               <div ref={galleryStickyRef} data-pdp-gallery className="lg:sticky lg:top-[100px] lg:self-start w-full space-y-3">
               <div className="relative group">
                 <div
@@ -532,7 +532,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Product info */}
-            <div ref={productInfoRef} data-pdp-info className="space-y-4 lg:space-y-2.5 lg:py-0 lg:max-w-[560px] order-2 lg:order-2">
+            <div ref={productInfoRef} data-pdp-info className="space-y-4 lg:space-y-3 lg:pt-4 lg:max-w-[520px] order-2 lg:order-2">
               {(categoryName || (showBrand && brandName)) && (
                 <div className="flex items-center gap-2 flex-wrap">
                   {categoryName && (
@@ -557,7 +557,7 @@ const ProductDetails = () => {
                   )}
                 </div>
               )}
-              <h1 className="text-[26px] sm:text-3xl lg:text-[34px] xl:text-[36px] font-display font-semibold tracking-tight text-foreground leading-[1.08]">{product.name}</h1>
+              <h1 className="text-[26px] sm:text-3xl lg:text-[34px] xl:text-[38px] font-display font-medium tracking-[-0.01em] text-foreground leading-[1.08]">{product.name}</h1>
 
               {reviews.length > 0 && product.review_count > 0 && (
                 <div className="flex items-center gap-2.5">

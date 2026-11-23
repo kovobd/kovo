@@ -109,6 +109,8 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
         srcSet={isResizableUrl(rawSrc) ? resizedSrcSet(rawSrc, isMobile ? [480, 720, 1080] : [960, 1280, 1600, 1920]) : undefined}
         sizes={isResizableUrl(rawSrc) ? sizes : undefined}
         alt={altText}
+        width={isMobile ? 900 : 1600}
+        height={isMobile ? 1600 : 900}
         className="absolute inset-0 w-full h-full object-cover"
         loading={priority ? "eager" : "lazy"}
         decoding="async"
@@ -134,7 +136,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
 
       {(slide.headline || slide.subheadline || (showButtons && (slide.button1_text || slide.button2_text))) && (
         <div className="absolute inset-0 flex items-end justify-start pointer-events-none pb-16 sm:pb-20 lg:pb-24">
-          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4">
+          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4 kovo-enter">
             {slide.headline && (
               <h2 className="font-display font-medium text-white leading-[1.08] tracking-[-0.01em] text-[30px] sm:text-[44px] lg:text-[56px] max-w-[16ch] text-balance"
                   style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}>
@@ -382,7 +384,7 @@ const VideoHero = ({ settings, isMobile }: { settings: HeroSettings; isMobile: b
 
       {(settings.video_headline || settings.video_subheadline || showButtons) && (
         <div className="absolute inset-0 flex items-end justify-start pointer-events-none pb-16 sm:pb-20 lg:pb-24">
-          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4">
+          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4 kovo-enter">
             {settings.video_headline && (
               <h2 className="font-display font-medium text-white leading-[1.08] tracking-[-0.01em] text-[30px] sm:text-[44px] lg:text-[56px] max-w-[16ch] text-balance"
                   style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}>

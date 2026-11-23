@@ -13,7 +13,7 @@ const Layout = () => {
   return (
     <LayoutDataProvider>
       <ScrollProgress />
-      <div className="min-h-screen flex flex-col">
+      <div className="kovo-store min-h-screen flex flex-col">
         <AnnouncementBar />
         <Header />
         <main key={location.pathname} className="flex-1 gv-page-fade">

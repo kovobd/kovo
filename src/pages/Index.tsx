@@ -258,9 +258,9 @@ const Index = () => {
               </FadeSection>
               {featured.length > 0 && (
                 <div ref={featuredGrid.ref} className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10 ${featuredGrid.className}`}>
-                  {featured.map((p, i) => {
+                  {featured.map((p) => {
                     const r = data?.featuredVariantRanges?.[p.id];
-                    return <ProductCard key={p.id} product={p} categoryName={p.category_id ? categoryMap[p.category_id] : undefined} offers={activeOffers} priority={i < 4} variantPriceMin={r?.min ?? null} variantPriceMax={r?.max ?? null} variantOrigPriceMin={r?.origMin ?? null} variantOrigPriceMax={r?.origMax ?? null} />;
+                    return <ProductCard key={p.id} product={p} categoryName={p.category_id ? categoryMap[p.category_id] : undefined} offers={activeOffers} variantPriceMin={r?.min ?? null} variantPriceMax={r?.max ?? null} variantOrigPriceMin={r?.origMin ?? null} variantOrigPriceMax={r?.origMax ?? null} />;
                   })}
 
                 </div>

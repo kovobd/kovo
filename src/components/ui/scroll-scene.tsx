@@ -127,7 +127,7 @@ export const DeepTilt: React.FC<React.HTMLAttributes<HTMLDivElement> & { intensi
   return (
     <div
       className={cn(
-        "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 will-change-transform",
+        "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 will-change-transform",
         className
       )}
       {...rest}

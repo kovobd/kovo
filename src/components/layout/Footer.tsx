@@ -174,6 +174,12 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      {/* Type moment: the wordmark set large across the foot of every page */}
+      <div aria-hidden className="kovo-footer-mark select-none overflow-hidden border-t border-border">
+        <div className="font-display font-medium uppercase leading-[0.8] text-center text-foreground/[0.07] text-[22vw] tracking-[0.08em] pl-[0.08em] translate-y-[12%]">
+          Kovo
+        </div>
+      </div>
     </footer>
   );
 };

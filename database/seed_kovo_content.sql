@@ -170,7 +170,8 @@ insert into public.about_sections (id, content, enabled, sort_order) values ('mi
 insert into public.about_sections (id, content, enabled, sort_order) values ('values','{"cards": [{"title": "Chosen with care", "description": "Every piece is picked for its finish and its fit.", "icon": "Award"}, {"title": "Fair prices", "description": "Clear prices with no surprises at checkout.", "icon": "Shield"}, {"title": "Delivered to you", "description": "Cash on delivery across the country.", "icon": "Truck"}]}'::jsonb,true,3);
 insert into public.about_sections (id, content, enabled, sort_order) values ('cta','{"text": "Find your next everyday bag.", "button_text": "Shop the collection", "button_link": "/shop"}'::jsonb,true,4);
 insert into public.about_sections (id, content, enabled, sort_order) values ('founder','{}'::jsonb,false,9);
-insert into public.contact_settings (id, page_title, page_intro, phone_field_enabled, show_address, submit_button_text, social_section_enabled, faq_shortcut_enabled, map_enabled) values ('default','Contact us','Questions about an order or a product? Send us a message and we will get back to you.',true,false,'Send message',false,false,false);
+insert into public.contact_settings (id, page_title, page_intro, phone_field_enabled, show_address, submit_button_text, social_section_enabled, faq_shortcut_enabled, map_enabled) values ('default','Contact us','Questions about an order or a product? Send us a message and we will get back to you.',true,false,'Send message',false,true,false);
+update public.contact_settings set faq_shortcut_items = (select jsonb_agg(jsonb_build_object('question', question, 'answer', answer) order by sort_order) from public.home_faqs) where id = 'default';
 insert into public.policies (slug, title, content, enabled, sort_order) values ('shipping','Shipping Policy','## Delivery
 
 Kovo delivers across Bangladesh. The delivery charge for your area is shown at checkout before you place your order.
