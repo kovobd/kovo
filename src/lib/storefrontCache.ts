@@ -21,8 +21,26 @@ export function getStorefrontVersion(): string | undefined {
   }
 }
 
+let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Asks the Cloudflare Worker to re-read the storefront content version now,
+ * so the live site shows the admin's change on the very next page view
+ * (otherwise it notices within a few seconds on its own). Several saves in a
+ * row send one request.
+ */
+function refreshLiveSite() {
+  if (typeof window === "undefined") return;
+  if (!/(^|\.)kovobd\.com$|\.workers\.dev$/.test(window.location.hostname)) return;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    fetch("/api/public/_refresh", { method: "POST", keepalive: true }).catch(() => undefined);
+  }, 300);
+}
+
 export function bumpStorefrontVersion(): string {
   const v = String(Date.now());
+  refreshLiveSite();
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(KEY, v);

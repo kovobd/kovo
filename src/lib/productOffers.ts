@@ -1,4 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
+// Loaded on first use so pages that only show offers never ship the SDK.
+import { getSupabase } from "@/lib/supabaseLazy";
 import type { CartItem } from "@/data/cartStore";
 
 export interface ProductOffer {
@@ -36,6 +37,7 @@ const CACHE_TTL = 60_000;
 
 export async function getAllProductOffers(): Promise<ProductOffer[]> {
   if (cachedProductOffers && Date.now() - cacheTime < CACHE_TTL) return cachedProductOffers;
+  const supabase = await getSupabase();
   const { data } = await supabase
     .from("product_offers")
     .select(

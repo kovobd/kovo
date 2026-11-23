@@ -103,7 +103,7 @@ function MethodCard({ m, index, open, onToggleOpen, onChange, onMakeDefault, onD
           <div className="space-y-1">
             <h3 className="font-semibold text-foreground">Logo</h3>
             <p className="text-xs text-muted-foreground mb-2">Square badge shown next to the method at checkout.</p>
-            <ImageUpload value={m.logo ? [m.logo] : []} onChange={(urls) => onChange({ logo: urls[0] || "" })}
+            <ImageUpload responsive={false} value={m.logo ? [m.logo] : []} onChange={(urls) => onChange({ logo: urls[0] || "" })}
               multiple={false} cropAspect="1:1" label="Payment logo"
               hint="Recommended 400 × 400 px · 1:1 (square) · kept small (under 100 KB) so checkout stays fast." />
           </div>

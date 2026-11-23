@@ -54,7 +54,7 @@ const PALETTE_PRESETS = [
 ];
 
 async function uploadValueImage(file: File): Promise<string> {
-  return uploadToR2(file, { prefix: "products", mime: file.type });
+  return uploadToR2(file, { prefix: "products", mime: file.type, responsive: true });
 }
 
 const VariantsEditor: React.FC<Props> = ({

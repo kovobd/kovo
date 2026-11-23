@@ -15,7 +15,10 @@ import SchemaHealthGate from "@/components/SchemaHealthGate";
 const DeferredProviders = lazy(() => import("@/components/layout/DeferredProviders"));
 
 
-import Index from "./pages/Index";
+// Lazy like every page: the Shop and product pages no longer download the
+// homepage (hero carousel, sections). Measured on a throttled phone, the
+// homepage itself is no slower (its hero photo is preloaded from the HTML).
+const Index = lazy(() => import("./pages/Index"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 
 const Shop = lazy(() => import("./pages/Shop"));
@@ -180,7 +183,7 @@ const App = () => {
           <SchemaHealthGate>
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Route$ fallback={<div className="min-h-[100svh]" />}><Index /></Route$>} />
               <Route path="/shop" element={<Route$ fallback={<ShopPageSkeleton />}><Shop /></Route$>} />
               <Route path="/product/:id" element={<Route$ fallback={<ProductDetailsSkeleton />}><ProductDetails /></Route$>} />
               <Route path="/about" element={<Route$ fallback={<AboutPageSkeleton />}><About /></Route$>} />

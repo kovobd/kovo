@@ -1,14 +1,16 @@
 // supabase/functions/image-upload/index.ts
 //
-// Admin-only image uploader. Stores the original bytes directly to
-// Cloudflare R2 via the S3 API and returns `r2o:{objectKey}` so the
-// frontend serves it via the CDN with no further processing.
+// Admin-only image uploader. Stores the bytes in Cloudflare R2 via the S3 API.
 //
-// NOTE: Server-side variant generation (AVIF/WebP/JPG at 400/800/1600)
-// was removed because WASM decode+resize+encode reliably exceeded the
-// edge function's 2s CPU limit (WORKER_RESOURCE_LIMIT). Browsers handle
-// scaling client-side; if multi-format variants are needed later, do it
-// in a background worker or via Cloudflare Image Resizing.
+// - With `variants` (WebP at 400/800/1600 px, encoded in the admin's browser
+//   by src/lib/r2Upload.ts): stores `{base}-original.jpg` plus
+//   `{base}-{w}.webp` and returns `r2:{base}`, so the storefront downloads
+//   a size that fits the screen.
+// - Otherwise (SVG, GIF, video, or a browser that cannot encode WebP):
+//   stores the original and returns `r2o:{objectKey}`.
+//
+// Resizing is not done here: WASM decode+resize+encode exceeded the edge
+// function's 2s CPU limit (WORKER_RESOURCE_LIMIT).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { AwsClient } from "npm:aws4fetch@1.0.20";
@@ -46,6 +48,16 @@ const SUPPORTED_MIMES = new Set([
   "video/webm",
   "video/quicktime",
 ]);
+
+const RASTER_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const VARIANT_NAMES = new Set(["400.webp", "800.webp", "1600.webp"]);
+
+function base64ToBytes(b64: string): Uint8Array {
+  const bin = atob(b64.includes(",") ? b64.split(",")[1] : b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 
 const EXT_FOR_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -303,6 +315,27 @@ Deno.serve(async (req) => {
     const bin = atob(base64.includes(",") ? base64.split(",")[1] : base64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    // Optional resized copies made in the admin's browser (WebP at 400/800/1600).
+    // With them the image is stored as an `r2:` variant set, so the storefront
+    // downloads a size that fits the screen instead of the full original.
+    type Variant = { name: string; mime: string; data: string };
+    const variants: Partial<Variant>[] = Array.isArray(body?.variants) ? body.variants : [];
+    const validVariants = variants.filter((v): v is Variant =>
+      VARIANT_NAMES.has(String(v?.name)) && v?.mime === "image/webp" && typeof v?.data === "string" && v.data.length > 0
+    );
+    const variantNames = new Set(validVariants.map((v) => v.name));
+    if (RASTER_MIMES.has(mime) && validVariants.length === VARIANT_NAMES.size && variantNames.size === VARIANT_NAMES.size) {
+      const baseKey = `${prefix}/${crypto.randomUUID()}`;
+      await Promise.all([
+        putR2(`${baseKey}-original.jpg`, bytes, mime),
+        ...validVariants.map((v) => putR2(`${baseKey}-${v.name}`, base64ToBytes(v.data), "image/webp")),
+      ]);
+      return new Response(
+        JSON.stringify({ baseKey, ref: `r2:${baseKey}` }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const ext = EXT_FOR_MIME[mime] ?? "bin";
     const objectKey = `${prefix}/${crypto.randomUUID()}.${ext}`;

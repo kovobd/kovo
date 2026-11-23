@@ -25,6 +25,12 @@ export interface R2UploadOptions {
   mime?: string;
   /** Granular progress 0..1 (covers base64 read + network upload + server processing). */
   onProgress?: (pct: number) => void;
+  /**
+   * Also store WebP copies at 400/800/1600 px and return an `r2:` ref, so the
+   * storefront serves a size that fits the screen. Use for storefront photos
+   * (products, hero, categories…), not for files that must stay JPG/PNG.
+   */
+  responsive?: boolean;
 }
 
 const readFunctionError = async (error: any) => {
@@ -138,6 +144,50 @@ const postFunctionJson = async (path: string, payload: any, timeoutMs: number): 
   }
 };
 
+
+// ── Responsive copies, made in the admin's browser ─────────────────────────
+// The storefront renders `r2:` refs as WebP at 400/800/1600 px (CdnImage), so
+// a phone downloads a few dozen KB instead of the full original. Encoding
+// happens here because the edge function's CPU limit is too small for it.
+const VARIANT_WIDTHS = [400, 800, 1600] as const;
+const RESIZABLE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+
+async function encodeWebp(bitmap: ImageBitmap, width: number): Promise<Blob | null> {
+  const w = Math.min(width, bitmap.width);
+  const h = Math.max(1, Math.round((bitmap.height / bitmap.width) * w));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.8));
+  // Browsers without a WebP encoder silently return PNG: treat as unsupported.
+  return blob && blob.type === "image/webp" ? blob : null;
+}
+
+/** WebP copies at each storefront width, or null if this browser cannot make them. */
+async function makeVariants(blob: Blob, mime: string): Promise<{ name: string; mime: string; data: string }[] | null> {
+  if (!RESIZABLE_MIMES.has(mime) || typeof createImageBitmap !== "function") return null;
+  try {
+    const bitmap = await createImageBitmap(blob);
+    try {
+      const out: { name: string; mime: string; data: string }[] = [];
+      for (const w of VARIANT_WIDTHS) {
+        const webp = await encodeWebp(bitmap, w);
+        if (!webp) return null;
+        out.push({ name: `${w}.webp`, mime: "image/webp", data: await blobToBase64(webp) });
+      }
+      return out;
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Upload a blob/file to Cloudflare R2 via the image-upload edge function.
  * Returns an `r2:...` (variant) or `r2o:...` (SVG / passthrough) reference.
@@ -155,7 +205,11 @@ export async function uploadToR2(blob: Blob, opts: R2UploadOptions): Promise<str
     else opts.onProgress(1);
   };
 
-  const data = await blobToBase64WithProgress(blob, (p) => report("read", p));
+  const [data, variants] = await Promise.all([
+    blobToBase64WithProgress(blob, (p) => report("read", p)),
+    opts.responsive ? makeVariants(blob, mime) : Promise.resolve(null),
+  ]);
+  const payload = variants ? { prefix: opts.prefix, mime, data, variants } : { prefix: opts.prefix, mime, data };
 
   // Kick off a processing easer that starts once upload bytes finish and runs
   // until the server responds (variant encoding + R2 uploads take real time).
@@ -184,7 +238,7 @@ export async function uploadToR2(blob: Blob, opts: R2UploadOptions): Promise<str
   try {
     const res = await xhrUploadJson(
       "image-upload",
-      { prefix: opts.prefix, mime, data },
+      payload,
       timeoutMs,
       (p) => {
         report("upload", p);
@@ -220,7 +274,7 @@ export async function uploadToR2(blob: Blob, opts: R2UploadOptions): Promise<str
       report("upload", synthetic);
     }, 120);
     try {
-      const res = await postFunctionJson("image-upload", { prefix: opts.prefix, mime, data }, timeoutMs);
+      const res = await postFunctionJson("image-upload", payload, timeoutMs);
       const ref = (res as any)?.ref as string | undefined;
       if (!ref || !isR2Ref(ref)) {
         throw new Error("Upload rejected: result is not a Cloudflare R2 reference");

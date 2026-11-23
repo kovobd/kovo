@@ -5,7 +5,7 @@ export interface Env {
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
-import { heroImageAttrs, HERO_MOBILE_QUERY } from "../src/lib/imageUrls";
+import { heroImageAttrs, HERO_MOBILE_QUERY, cdnImageAttrs, PDP_MAIN_IMAGE_SIZES } from "../src/lib/imageUrls";
 
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
 const DEFAULT_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co";
@@ -63,10 +63,21 @@ const STORED_VERSION = "x-kovo-content-version";
 
 // ── Storefront content version ─────────────────────────────────────────────
 // A database trigger bumps public.storefront_version on every write to a table
-// the public-* functions read (shop settings, products, homepage, …). The
-// Worker checks it every few seconds; a cached copy stored under an older
-// version is never served, so admin edits reach every visitor right away.
-const VERSION_CHECK_MS = 5000;
+// the public-* functions read (shop settings, products, homepage, …). A cached
+// copy stored under an older version is never served.
+//
+// The version itself is kept in this data centre's edge cache, so requests
+// read it locally instead of waiting on Supabase (Seoul):
+//  - under VERSION_FRESH_MS old: used as is;
+//  - up to VERSION_MAX_STALE_MS old: used, and refreshed in the background;
+//  - older or missing: refreshed before answering.
+// Admin saves also POST /api/public/_refresh, which refreshes it at once, so
+// the admin's next page view already shows the change.
+const VERSION_FRESH_MS = 5000;
+const VERSION_MAX_STALE_MS = 60000;
+const VERSION_PATH = "/api/public/_content-version";
+// Per-isolate copy of the resolved value only: a Worker request may not await
+// a fetch that another request started, so promises are never shared.
 let versionMemo: { value: string | null; at: number } = { value: null, at: 0 };
 
 async function readContentVersion(env: Env): Promise<string | null> {
@@ -89,22 +100,46 @@ async function readContentVersion(env: Env): Promise<string | null> {
   }
 }
 
-/**
- * Current content version (memoised per isolate for a few seconds); null if unknown.
- * Only the resolved value is shared between requests: a Worker request may
- * not await a fetch that another request started (it throws), so each request
- * that finds the memo expired runs its own check.
- */
-async function contentVersion(env: Env): Promise<string | null> {
-  if (Date.now() - versionMemo.at < VERSION_CHECK_MS) return versionMemo.value;
-  try {
-    const v = await readContentVersion(env);
-    // Keep the last known value if the check fails, rather than forgetting it.
-    versionMemo = { value: v ?? versionMemo.value, at: Date.now() };
-  } catch {
-    /* fall through with the last known value */
+function versionKey(origin: string): Request {
+  return new Request(`${origin}${VERSION_PATH}`, { method: "GET" });
+}
+
+/** Reads the version from Supabase and stores it in this data centre's cache. */
+async function refreshContentVersion(env: Env, origin: string): Promise<string | null> {
+  const v = await readContentVersion(env);
+  if (v) {
+    versionMemo = { value: v, at: Date.now() };
+    await caches.default.put(
+      versionKey(origin),
+      new Response(v, { headers: { "Cache-Control": "public, max-age=86400", [STORED_AT]: String(Date.now()) } }),
+    ).catch(() => undefined);
   }
-  return versionMemo.value;
+  return v ?? versionMemo.value;
+}
+
+/** Current content version; null if unknown (then cached copies are trusted by age). */
+async function contentVersion(env: Env, ctx: ExecutionContext, origin: string): Promise<string | null> {
+  const now = Date.now();
+  if (versionMemo.value && now - versionMemo.at < VERSION_FRESH_MS) return versionMemo.value;
+  try {
+    const cached = await caches.default.match(versionKey(origin));
+    if (cached) {
+      const at = Number(cached.headers.get(STORED_AT) || 0);
+      const value = await cached.text();
+      const age = now - at;
+      if (age < VERSION_FRESH_MS) {
+        versionMemo = { value, at };
+        return value;
+      }
+      if (age < VERSION_MAX_STALE_MS) {
+        ctx.waitUntil(refreshContentVersion(env, origin).catch(() => undefined));
+        return value;
+      }
+    }
+    return await refreshContentVersion(env, origin);
+  } catch {
+    return versionMemo.value;
+  }
 }
 
 /** True if a cached copy was stored under an older content version. */
@@ -151,7 +186,7 @@ async function proxyPublicApi(env: Env, ctx: ExecutionContext, fn: string, url: 
   const search = params.length ? `?${new URLSearchParams(params).toString()}` : "";
   const cacheKey = new Request(`${url.origin}/api/public/${fn}${search}`, { method: "GET" });
 
-  const [cached, version] = await Promise.all([cache.match(cacheKey), contentVersion(env)]);
+  const [cached, version] = await Promise.all([cache.match(cacheKey), contentVersion(env, ctx, url.origin)]);
   if (cached && !isOutdated(cached, version)) {
     const storedAt = Number(cached.headers.get(STORED_AT) || 0);
     const ageSeconds = (Date.now() - storedAt) / 1000;
@@ -211,7 +246,7 @@ async function cachedPublicText(env: Env, ctx: ExecutionContext, origin: string,
   // than risk inlining data the admin has already changed.
   const SLOW = Symbol("slow");
   const versionOrSlow = Promise.race([
-    contentVersion(env),
+    contentVersion(env, ctx, origin),
     new Promise<typeof SLOW>((r) => setTimeout(() => r(SLOW), 400)),
   ]);
   const [cached, versionResult] = await Promise.all([cache.match(cacheKey), versionOrSlow]);
@@ -255,6 +290,29 @@ function heroPreloads(homeJson: string, layoutJson: string | null): string {
   }
 }
 
+/** Preload for the product page's main photo, so it downloads while the app boots. */
+function productPreload(productJson: string, layoutJson: string | null): string {
+  try {
+    const data = JSON.parse(productJson)?.data;
+    const first = (data?.product?.images ?? []).find((s: unknown) => typeof s === "string" && s.trim());
+    // A variant with its own photo may replace the first image once the app
+    // picks the default variant; don't preload a photo that might not show.
+    const variantPhotos = (data?.variants ?? []).some((v: { image_url?: string | null }) => !!v?.image_url);
+    if (!first || variantPhotos) return "";
+    const r2Base = layoutJson ? String(JSON.parse(layoutJson)?.data?.r2PublicBaseUrl || "") : "";
+    const a = cdnImageAttrs(first, r2Base);
+    if (!a) return "";
+    const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    return (
+      `<link rel="preload" as="image" fetchpriority="high" href="${esc(a.src)}"` +
+      (a.srcSet ? ` imagesrcset="${esc(a.srcSet)}" imagesizes="${esc(PDP_MAIN_IMAGE_SIZES)}"` : "") +
+      `>`
+    );
+  } catch {
+    return "";
+  }
+}
+
 /** The SPA shell (dist/app.html). */
 function fetchShell(env: Env, request: Request, url: URL): Promise<Response> {
   return env.ASSETS.fetch(new Request(`${url.origin}/app.html`, { method: "GET", headers: request.headers }));
@@ -272,7 +330,11 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
     if (texts[i]) inline.push(`${JSON.stringify(`/api/public/${e.fn}${e.search}`)}:${texts[i]!.replace(/</g, "\\u003c")}`);
   });
   const homeIdx = entries.findIndex((e) => e.fn === "public-home");
-  const preload = homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0]) : "";
+  const productIdx = entries.findIndex((e) => e.fn === "public-product");
+  const preload =
+    homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0])
+    : productIdx >= 0 && texts[productIdx] ? productPreload(texts[productIdx]!, texts[0])
+    : "";
   if (!inline.length && !preload) return page;
 
   const headers = new Headers(page.headers);
@@ -299,6 +361,18 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // Admin saves call this so the change shows up on the very next page view.
+    if (request.method === "POST" && url.pathname === "/api/public/_refresh") {
+      // Public and cheap (one tiny read), but throttled so it cannot be used
+      // to hammer Supabase: at most one read per second per isolate.
+      const v = Date.now() - versionMemo.at < 1000
+        ? versionMemo.value
+        : await refreshContentVersion(env, url.origin).catch(() => null);
+      return new Response(JSON.stringify({ version: v }), {
+        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" },
+      });
+    }
 
     if (request.method === "GET" && url.pathname.startsWith("/api/public/")) {
       const fn = url.pathname.slice("/api/public/".length).replace(/\/+$/, "");

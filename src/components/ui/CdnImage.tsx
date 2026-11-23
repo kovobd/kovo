@@ -151,9 +151,12 @@ const CdnImage = forwardRef<HTMLImageElement, CdnImageProps>(function CdnImage(
     return (
       <img
         ref={setImgRef}
-        src={resizable ? resizedUrl(resolvedSrc, 800) : resolvedSrc}
-        srcSet={resizable ? resizedSrcSet(resolvedSrc) : undefined}
+        // sizes and srcSet before src: React sets attributes in this order, and
+        // a browser that sees src first starts downloading it before srcset
+        // can pick the right size (each image was fetched twice).
         sizes={resizable ? sizes : undefined}
+        srcSet={resizable ? resizedSrcSet(resolvedSrc) : undefined}
+        src={resizable ? resizedUrl(resolvedSrc, 800) : resolvedSrc}
         alt={alt}
         loading={loading}
         decoding={decoding}
@@ -181,9 +184,9 @@ const CdnImage = forwardRef<HTMLImageElement, CdnImageProps>(function CdnImage(
       <source type="image/webp" srcSet={buildSrcSet(key, "webp")} sizes={sizes} />
       <img
         ref={setImgRef}
-        src={fallback}
-        srcSet={VARIANT_WIDTHS.map((w) => `${r2Url(key, w, "webp")} ${w}w`).join(", ")}
         sizes={sizes}
+        srcSet={VARIANT_WIDTHS.map((w) => `${r2Url(key, w, "webp")} ${w}w`).join(", ")}
+        src={fallback}
         alt={alt}
         loading={loading}
         decoding={decoding}

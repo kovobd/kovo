@@ -86,7 +86,7 @@ const InvoiceSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
           <FormRow label="Store address">
             <Textarea value={settings.store_address ?? ""} onChange={(e) => set({ store_address: e.target.value })} placeholder="Full business address" rows={2} />
           </FormRow>
-          <ImageUpload
+          <ImageUpload responsive={false}
             value={settings.logo_url ? [settings.logo_url] : []}
             onChange={(urls) => set({ logo_url: urls[0] || null })}
             multiple={false}

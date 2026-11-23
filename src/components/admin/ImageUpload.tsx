@@ -53,9 +53,14 @@ interface ImageUploadProps {
    * Existing images can be re-cropped via a "Re-crop" button.
    */
   cropAspect?: CropAspect;
+  /**
+   * Store screen-sized WebP copies too (default). Turn off for images that
+   * must stay JPG/PNG outside the storefront, such as the invoice logo.
+   */
+  responsive?: boolean;
 }
 
-const ImageUpload = ({ value, onChange, multiple = true, label = "Images", hint, cropAspect }: ImageUploadProps) => {
+const ImageUpload = ({ value, onChange, multiple = true, label = "Images", hint, cropAspect, responsive = true }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
@@ -78,7 +83,7 @@ const ImageUpload = ({ value, onChange, multiple = true, label = "Images", hint,
         ),
       );
     }
-    return uploadToR2(blob, { prefix: "products", mime: normalizeImageMime(blob.type, ext), onProgress });
+    return uploadToR2(blob, { prefix: "products", mime: normalizeImageMime(blob.type, ext), onProgress, responsive });
   };
 
 

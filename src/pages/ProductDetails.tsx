@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { trackViewContent, trackAddToCart } from "@/lib/trackingEvents";
 import { MinusIcon, PlusIcon, ShoppingBagIcon, ArrowLeftIcon, CheckIcon, TruckIcon, TagIcon, GiftIcon, PartyPopperIcon, ChevronDownIcon } from "@/components/ui/icons";
 // Gallery thumbnails: simple wrapping row directly inline
-import { supabase } from "@/integrations/supabase/client";
 import { useCartStore } from "@/data/cartStore";
 import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
 import { simulateOffersForProduct, type ProductOffer } from "@/lib/productOffers";
@@ -29,7 +28,8 @@ import {
 
 import { ProductDetailsSkeleton } from "@/components/ui/page-skeletons";
 import CdnImage from "@/components/ui/CdnImage";
-import { resolveImageSrc } from "@/lib/cdnImage";
+import { PDP_MAIN_IMAGE_SIZES, cdnImageAttrs } from "@/lib/imageUrls";
+import { resolveImageSrc, getR2Base } from "@/lib/cdnImage";
 import { useLayoutData } from "@/components/layout/LayoutDataProvider";
 import DynamicIcon from "@/components/ui/DynamicIcon";
 
@@ -70,16 +70,36 @@ const ProductDetails = () => {
 
   const productImages = data?.product?.images;
   const productVariantImages = data?.variantRows?.map((row) => row.image_url).filter(Boolean);
-  // Preload all product + variant images so variant image-swap is instant.
+  // Warm the other gallery + variant photos so swapping is instant, but only
+  // once the page has loaded (they must not compete with the main photo), and
+  // at the same responsive size the gallery will show (a fixed 800px copy was
+  // a second download of every photo).
+  const warmKey = [...(productImages ?? []), ...(productVariantImages ?? [])].join("|");
   useEffect(() => {
-    const sources = [...(productImages ?? []), ...(productVariantImages ?? [])];
+    const sources = [...new Set(warmKey.split("|").filter(Boolean))].slice(1);
     if (!sources.length) return;
-    sources.forEach((src) => {
-      const img = new Image();
-      img.decoding = "async";
-      img.src = resolveImageSrc(src, 800);
-    });
-  }, [productImages, productVariantImages]);
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      for (const src of sources) {
+        const attrs = cdnImageAttrs(src, getR2Base());
+        const img = new Image();
+        img.decoding = "async";
+        if (attrs?.srcSet) {
+          img.sizes = PDP_MAIN_IMAGE_SIZES;
+          img.srcset = attrs.srcSet;
+        }
+        img.src = attrs?.src ?? resolveImageSrc(src, 800);
+      }
+    };
+    const idle = () => ("requestIdleCallback" in window ? window.requestIdleCallback(warm, { timeout: 3000 }) : setTimeout(warm, 1500));
+    if (document.readyState === "complete") idle();
+    else window.addEventListener("load", idle, { once: true });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", idle);
+    };
+  }, [warmKey]);
 
   // Track ViewContent only when the user actually lands on this product.
   const product = data?.product;
@@ -464,7 +484,7 @@ const ProductDetails = () => {
                     className="w-full h-full object-cover object-center md:object-contain lg:object-contain transition-transform duration-500 ease-out group-hover:scale-[1.015]"
                     priority
                     preload
-                    sizes="(max-width: 1024px) 100vw, 600px"
+                    sizes={PDP_MAIN_IMAGE_SIZES}
                     width={600}
                     height={750}
                   />

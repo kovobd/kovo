@@ -1,4 +1,12 @@
 import { useEffect } from "react";
+import { getR2BaseKey, isR2OriginalRef, isR2VariantRef, r2Direct, r2Original } from "@/lib/cdnImage";
+
+/** Share previews need a plain JPG/PNG URL, not an `r2:` / `r2o:` ref. */
+const shareImageUrl = (src: string): string => {
+  if (isR2VariantRef(src)) return r2Original(getR2BaseKey(src)) || src;
+  if (isR2OriginalRef(src)) return r2Direct(getR2BaseKey(src)) || src;
+  return src;
+};
 
 const setMeta = (selector: string, attr: string, value: string) => {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
@@ -55,8 +63,8 @@ export function useDocumentMeta({ title, description, canonicalPath, noindex, im
       setMeta('meta[property="og:url"]', "content", url);
     }
     if (image) {
-      setMeta('meta[property="og:image"]', "content", image);
-      setMeta('meta[name="twitter:image"]', "content", image);
+      setMeta('meta[property="og:image"]', "content", shareImageUrl(image));
+      setMeta('meta[name="twitter:image"]', "content", shareImageUrl(image));
     }
     if (noindex) {
       setMeta('meta[name="robots"]', "content", "noindex,nofollow");

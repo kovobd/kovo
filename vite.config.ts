@@ -42,6 +42,15 @@ export default defineConfig(() => ({
           // gzip of unused Radix code on every homepage visit. Letting
           // Rollup decide colocates each primitive with the chunks that
           // actually import it.
+          // tslib's tiny helpers (__rest, __assign…) are shared by Radix
+          // (dialog / remove-scroll) and the Supabase SDK. Left alone, Rollup
+          // put them inside the supabase chunk, so the Shop and product pages
+          // downloaded the whole 220 KB SDK just to open a filter drawer.
+          if (id.includes("/node_modules/tslib/")) return "tslib";
+          // React in its own chunk: otherwise Rollup folds it into whichever
+          // vendor chunk it meets first (it ended up inside "embla", so every
+          // page shipped the hero carousel).
+          if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return "react";
           if (id.includes("@tanstack")) return "query";
           if (id.includes("react-router")) return "router";
           if (id.includes("embla-carousel")) return "embla";

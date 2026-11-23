@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
-import { resolveImageSrc, isResizableUrl, resizedSrcSet } from "@/lib/cdnImage";
+import { resolveImageSrc, isResizableUrl, resizedSrcSet, isR2VariantRef, getR2BaseKey, buildSrcSet } from "@/lib/cdnImage";
 
 const useReduced = () => {
   const [r, setR] = React.useState(false);
@@ -85,13 +85,19 @@ interface ParallaxImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 export const ParallaxImage: React.FC<ParallaxImageProps> = ({ className, style, src, speed: _s, scale: _sc, ...rest }) => {
   const resolved = typeof src === "string" ? resolveImageSrc(src, 800) : src;
-  const responsive = typeof src === "string" && isResizableUrl(src);
+  const r2Variants = typeof src === "string" && isR2VariantRef(src);
+  const responsive = r2Variants || (typeof src === "string" && isResizableUrl(src));
+  const srcSet = !responsive
+    ? undefined
+    : r2Variants
+      ? buildSrcSet(getR2BaseKey(src as string), "webp")
+      : resizedSrcSet(src as string, [480, 800, 1200, 1600]);
   return (
     <div className="absolute inset-0 overflow-hidden">
       <img
-        src={resolved as string}
-        srcSet={responsive ? resizedSrcSet(src as string, [480, 800, 1200, 1600]) : undefined}
         sizes={responsive ? "(min-width: 1024px) 50vw, 100vw" : undefined}
+        srcSet={srcSet}
+        src={resolved as string}
         style={style}
         className={cn("absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]", className)}
         {...(rest as any)}

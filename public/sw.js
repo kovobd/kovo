@@ -3,12 +3,13 @@
  * - Runtime caches build assets, fonts, and R2 images with stale-while-revalidate
  * - Versioned cache name so a new deploy supersedes stale entries
  */
-const VERSION = "v3-gv";
+const VERSION = "v4-kovo";
 const STATIC_CACHE = `gv-static-${VERSION}`;
 const RUNTIME_CACHE = `gv-runtime-${VERSION}`;
 const IMAGE_CACHE = `gv-img-${VERSION}`;
 
-const SHELL = ["/", "/favicon.ico", "/site.webmanifest"];
+// Page HTML is never cached here: the Worker serves it fresh with data inlined.
+const SHELL = ["/favicon.ico", "/site.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -27,6 +28,20 @@ self.addEventListener("activate", (event) => {
     ).then(() => self.clients.claim())
   );
 });
+
+// Content-hashed files never change: answer from the cache with no network
+// request at all, and fetch only what is missing.
+function cacheFirst(req, cacheName) {
+  return caches.open(cacheName).then((cache) =>
+    cache.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req).then((res) => {
+        if (res && res.status === 200 && res.type === "basic") cache.put(req, res.clone()).catch(() => {});
+        return res;
+      });
+    })
+  );
+}
 
 function staleWhileRevalidate(req, cacheName) {
   return caches.open(cacheName).then((cache) =>
@@ -53,9 +68,9 @@ self.addEventListener("fetch", (event) => {
   // Never intercept Supabase API/edge-function calls (they manage their own caching/auth).
   if (url.hostname.endsWith(".supabase.co")) return;
 
-  // Hashed build assets — cache-first, long-lived
-  if (url.origin === self.location.origin && /\/assets\/.+\.(js|css|woff2?)$/i.test(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
+  // Hashed build assets and self-hosted fonts — cache-first, long-lived
+  if (url.origin === self.location.origin && /^\/(assets|fonts)\/.+\.(js|css|woff2?)$/i.test(url.pathname)) {
+    event.respondWith(cacheFirst(req, STATIC_CACHE));
     return;
   }
 

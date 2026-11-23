@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
-import { resolveImageSrc, isR2VariantRef, getR2BaseKey, buildSrcSet, r2Url, getR2Base } from "@/lib/cdnImage";
+import { resolveImageSrc, getR2Base } from "@/lib/cdnImage";
 import { heroImageAttrs, HERO_MOBILE_QUERY } from "@/lib/imageUrls";
 
 export type InteractionMode = "buttons" | "image" | "both";
@@ -84,33 +84,14 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
   // desktop ~100vw capped by the 16:9 hero frame.
   const sizes = isMobile ? "100vw" : "(min-width: 1280px) 1600px, 100vw";
 
-  let imgNode: React.ReactNode;
-  if (isR2VariantRef(rawSrc)) {
-    const key = getR2BaseKey(rawSrc);
-    imgNode = (
-      <picture>
-        <source type="image/avif" srcSet={buildSrcSet(key, "avif")} sizes={sizes} />
-        <source type="image/webp" srcSet={buildSrcSet(key, "webp")} sizes={sizes} />
-        <img
-          src={r2Url(key, 1600, "webp")}
-          alt={altText}
-          className="absolute inset-0 w-full h-full object-cover"
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          width={1600}
-          height={isMobile ? 2844 : 900}
-          {...(priority ? { fetchpriority: "high" as const } : {})}
-        />
-      </picture>
-    );
-  } else {
-    // Same attributes the Worker uses to preload the first slide from the HTML.
-    const attrs = heroImageAttrs(slide, isMobile, getR2Base());
-    imgNode = (
+  // Same attributes the Worker uses to preload the first slide from the HTML.
+  const attrs = heroImageAttrs(slide, isMobile, getR2Base());
+  const imgNode = (
       <img
-        src={attrs?.src ?? resolveImageSrc(rawSrc, isMobile ? 800 : 1600)}
-        srcSet={attrs?.srcSet}
+        // sizes/srcSet before src so the browser never fetches src first.
         sizes={attrs?.srcSet ? attrs.sizes : undefined}
+        srcSet={attrs?.srcSet}
+        src={attrs?.src ?? resolveImageSrc(rawSrc, isMobile ? 800 : 1600)}
         alt={altText}
         width={isMobile ? 900 : 1600}
         height={isMobile ? 1600 : 900}
@@ -119,8 +100,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
         decoding="async"
         {...(priority ? { fetchpriority: "high" as const } : {})}
       />
-    );
-  }
+  );
 
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     imageIsLink ? (
