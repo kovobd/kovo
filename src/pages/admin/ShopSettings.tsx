@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Section, FormRow, StickyActionBar } from "@/components/admin/ui";
 import { useDirtyForm } from "@/hooks/useDirtyForm";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 const ShopSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
   const [settings, setSettings] = useState<any>(null);
@@ -40,6 +41,7 @@ const ShopSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       rebase(settings);
+      bumpStorefrontVersion();
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["public-layout"] }),
         queryClient.invalidateQueries({ queryKey: ["public-home"] }),

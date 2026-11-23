@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Section, FormRow, StickyActionBar, EmptyState } from "@/components/admin/ui";
 import { useDirtyForm } from "@/hooks/useDirtyForm";
 import { Plus, Trash2, MessageCircle, RotateCcw, Save, Loader2 } from "lucide-react";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Channel {
   id: string;
@@ -128,6 +129,7 @@ const DirectOrderChannels = ({ hideTitle }: { hideTitle?: boolean }) => {
         }).eq("id", c.id);
         if (error) throw error;
       }
+      bumpStorefrontVersion();
       toast({ title: "Channels saved" });
       load();
     } catch (e: any) {

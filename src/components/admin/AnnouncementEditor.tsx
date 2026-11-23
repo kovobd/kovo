@@ -15,6 +15,7 @@ import {
   SortableContext, arrayMove, useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Announcement {
   id: string;
@@ -198,7 +199,7 @@ const AnnouncementEditor = () => {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Announcement saved" });
     }
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
     load();
   };
 
@@ -230,7 +231,7 @@ const AnnouncementEditor = () => {
       }
       return next;
     });
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
   };
 
   const removeOne = async (id: string) => {
@@ -242,7 +243,7 @@ const AnnouncementEditor = () => {
     const { error } = await supabase.from("announcement_bar").delete().eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Announcement deleted" });
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
     load();
   };
 
@@ -263,7 +264,7 @@ const AnnouncementEditor = () => {
       items.forEach(i => { if (next[i.id] !== undefined) next[i.id] = snapshot({ ...i, dismissible: v }); });
       return next;
     });
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -282,7 +283,7 @@ const AnnouncementEditor = () => {
       reordered.forEach(i => { if (next[i.id] !== undefined) next[i.id] = snapshot(i); });
       return next;
     });
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
   };
 
   const settingsDirty = JSON.stringify(settings) !== settingsBaseline;
@@ -302,7 +303,7 @@ const AnnouncementEditor = () => {
     } as any).eq("id", "default");
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     setSettingsBaseline(JSON.stringify(settings));
-    qc.invalidateQueries({ queryKey: ["public-layout"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-layout"] });
     toast({ title: "Behavior settings saved" });
   };
 

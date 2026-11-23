@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Save, X, ChevronDown, ChevronUp, Copy, GripVertical, Loader2 } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import VideoUpload from "@/components/admin/VideoUpload";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -213,7 +214,7 @@ const HeroManager = () => {
     const { error } = await supabase.from("hero_settings").update(payload as any).eq("id", "default");
     setSaving(false);
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
-    else { setSavedSettings({ ...settings }); toast({ title: "Hero settings saved" }); }
+    else { setSavedSettings({ ...settings }); bumpStorefrontVersion(); toast({ title: "Hero settings saved" }); }
   };
 
   // Slides
@@ -224,6 +225,7 @@ const HeroManager = () => {
     if (!newSlide.image_url) { toast({ title: "Desktop image required", variant: "destructive" }); return; }
     const { error, data } = await supabase.from("hero_slides").insert(newSlide as any).select("*").single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    bumpStorefrontVersion();
     toast({ title: "Slide added" });
     setNewSlide(null);
     const row = data as Slide;
@@ -235,6 +237,7 @@ const HeroManager = () => {
     const { id, ...payload } = s;
     const { error } = await supabase.from("hero_slides").update(payload as any).eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    bumpStorefrontVersion();
     toast({ title: "Slide updated" });
     setSavedSlides(prev => ({ ...prev, [id]: { ...s } }));
   };
@@ -244,6 +247,7 @@ const HeroManager = () => {
     await supabase.from("hero_slides").delete().eq("id", id);
     setSlides(prev => prev.filter(x => x.id !== id));
     setSavedSlides(prev => { const c = { ...prev }; delete c[id]; return c; });
+    bumpStorefrontVersion();
     toast({ title: "Slide deleted" });
   };
 
@@ -255,6 +259,7 @@ const HeroManager = () => {
     const row = data as Slide;
     setSlides(prev => [...prev, row]);
     setSavedSlides(prev => ({ ...prev, [row.id]: { ...row } }));
+    bumpStorefrontVersion();
     toast({ title: "Slide duplicated" });
   };
 
@@ -262,6 +267,7 @@ const HeroManager = () => {
     setSlides(prev => prev.map(sl => sl.id === id ? { ...sl, enabled: v } : sl));
     setSavedSlides(prev => prev[id] ? ({ ...prev, [id]: { ...prev[id], enabled: v } }) : prev);
     await supabase.from("hero_slides").update({ enabled: v } as any).eq("id", id);
+    bumpStorefrontVersion();
   };
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -273,6 +279,7 @@ const HeroManager = () => {
     // ONE write instead of N — see public.bulk_update_sort_order().
     await supabase.rpc("bulk_update_sort_order" as any, { _table: "hero_slides", _ids: reordered.map(s => s.id) });
     setSavedSlides(Object.fromEntries(reordered.map(x => [x.id, { ...x }])));
+    bumpStorefrontVersion();
   };
 
   const updateSlide = (id: string, u: Partial<Slide>) =>

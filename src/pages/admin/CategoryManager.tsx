@@ -10,6 +10,7 @@ import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Search, FolderTree } f
 import ImageUpload from "@/components/admin/ImageUpload";
 import { Section, FormRow } from "@/components/admin/ui";
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Category {
   id: string;
@@ -81,6 +82,7 @@ const CategoryManager = () => {
         const { error } = await supabase.from("categories").update(payload).eq("id", editing.id);
         if (error) throw error;
       }
+      bumpStorefrontVersion();
       toast({ title: isNew ? "Category created" : "Category updated" });
       setEditing(null);
       setIsNew(false);
@@ -111,6 +113,7 @@ const CategoryManager = () => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });
       return;
     }
+    bumpStorefrontVersion();
     toast({ title: "Category deleted" });
     qc.invalidateQueries({ queryKey: adminKeys.categories });
   };

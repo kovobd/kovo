@@ -1,1 +1,31 @@
 project_id = "pyzjuxdznayzenxjpiea"
+
+# These functions validate the caller and their admin/staff role internally
+# with auth.getClaims(). Disable the legacy gateway JWT check so ES256-signed
+# user sessions reach that validation instead of being rejected first.
+[functions.admin-credentials]
+verify_jwt = false
+
+[functions.bdcourier-check]
+verify_jwt = false
+
+[functions.courier-proxy]
+verify_jwt = false
+
+[functions.ecomdrive-proxy]
+verify_jwt = false
+
+[functions.image-upload]
+verify_jwt = false
+
+[functions.migrate-images-r2]
+verify_jwt = false
+
+[functions.r2-cleanup-worker]
+verify_jwt = false
+
+[functions.r2-orphan-sweep]
+verify_jwt = false
+
+[functions.steadfast-proxy]
+verify_jwt = false

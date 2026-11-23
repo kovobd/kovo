@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface FaqItem {
   id: string;
@@ -41,6 +42,7 @@ const FaqEditor = () => {
       const { error } = await supabase.from("home_faqs").update(payload).eq("id", editing.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
+    bumpStorefrontVersion();
     toast({ title: isNew ? "FAQ added" : "FAQ updated" });
     setEditing(null);
     load();
@@ -48,6 +50,7 @@ const FaqEditor = () => {
 
   const handleDelete = async (id: string) => {
     await supabase.from("home_faqs").delete().eq("id", id);
+    bumpStorefrontVersion();
     toast({ title: "FAQ deleted" });
     load();
   };

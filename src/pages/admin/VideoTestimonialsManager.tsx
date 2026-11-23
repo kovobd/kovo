@@ -14,6 +14,7 @@ import { parseVideoUrl, buildEmbedUrl } from "@/lib/videoUrl";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { resolveImageSrc } from "@/lib/cdnImage";
 import { cn } from "@/lib/utils";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 // ──────────────────────────────────────────────────────────────────────
 // Types
@@ -393,6 +394,7 @@ const VideoTestimonialsManager = () => {
       const fresh = ((data as VideoTestimonial[]) || []);
       setRows(fresh);
       setOriginal(JSON.parse(JSON.stringify(fresh)));
+      bumpStorefrontVersion();
       qc.invalidateQueries({ queryKey: ["public-home"] });
       toast({ title: "Video testimonials saved" });
     } catch (e: any) {

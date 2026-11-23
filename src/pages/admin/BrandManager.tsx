@@ -11,6 +11,7 @@ import { Plus, Pencil, Trash2, ChevronLeft, Search, Tag } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { Section, FormRow } from "@/components/admin/ui";
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Brand {
   id: string;
@@ -59,6 +60,7 @@ const BrandManager = () => {
         const { error } = await supabase.from("brands").update(payload).eq("id", editing.id);
         if (error) throw error;
       }
+      bumpStorefrontVersion();
       toast({ title: isNew ? "Brand created" : "Brand updated" });
       setEditing(null);
       setIsNew(false);
@@ -84,6 +86,7 @@ const BrandManager = () => {
       toast({ title: "Delete failed", description: error.message, variant: "destructive" });
       return;
     }
+    bumpStorefrontVersion();
     toast({ title: "Brand deleted" });
     qc.invalidateQueries({ queryKey: adminKeys.brands });
   };

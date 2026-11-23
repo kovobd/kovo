@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Testimonial {
   id: string;
@@ -52,6 +53,7 @@ const TestimonialsEditor = () => {
       const { error } = await supabase.from("testimonials").update(payload as any).eq("id", editing.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
+    bumpStorefrontVersion();
     toast({ title: isNew ? "Testimonial added" : "Testimonial updated" });
     setEditing(null);
     load();
@@ -59,6 +61,7 @@ const TestimonialsEditor = () => {
 
   const handleDelete = async (id: string) => {
     await supabase.from("testimonials").delete().eq("id", id);
+    bumpStorefrontVersion();
     toast({ title: "Testimonial deleted" });
     load();
   };

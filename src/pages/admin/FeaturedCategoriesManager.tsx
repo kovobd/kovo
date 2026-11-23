@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Save, X, GripVertical, LayoutGrid } from "lucide-react";
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors,
   type DragEndEvent,
@@ -114,6 +115,7 @@ const FeaturedCategoriesManager = ({ hideTitle: _hideTitle }: { hideTitle?: bool
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const invalidatePublic = () => {
+    bumpStorefrontVersion();
     qc.invalidateQueries({ queryKey: ["public-home"] });
   };
 

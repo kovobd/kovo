@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Tag as TagIcon, ChevronLeft } from "lucide-react";
 import { Section, FormRow } from "@/components/admin/ui";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Tag {
   id: string;
@@ -53,6 +54,7 @@ const TagManager = () => {
           .eq("id", editing.id);
         if (error) throw error;
       }
+      bumpStorefrontVersion();
       toast({ title: isNew ? "Tag created" : "Tag updated" });
       setEditing(null);
       setIsNew(false);
@@ -72,6 +74,7 @@ const TagManager = () => {
     if (!confirm(`Delete "${tag.name}"?`)) return;
     qc.setQueryData(adminKeys.tags, (old: any) => old ? { ...old, tags: old.tags.filter((t: any) => t.id !== tag.id) } : old);
     await supabase.from("tags").delete().eq("id", tag.id);
+    bumpStorefrontVersion();
     qc.invalidateQueries({ queryKey: adminKeys.tags });
   };
 

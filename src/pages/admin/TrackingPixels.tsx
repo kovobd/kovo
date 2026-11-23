@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useDirtyForm } from "@/hooks/useDirtyForm";
 import MetaEventInspector from "@/components/admin/MetaEventInspector";
 import { cn } from "@/lib/utils";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 /**
  * Compact collapsible card matching the CustomerProfile aesthetic:
@@ -258,6 +259,7 @@ const TrackingPixels = forwardRef<HTMLDivElement, { hideTitle?: boolean }>(({ hi
     const next = pixels.filter(px => px.id !== id);
     setPixels(next);
     rebase(next);
+    bumpStorefrontVersion();
     toast({ title: "Pixel removed" });
   };
 
@@ -282,6 +284,7 @@ const TrackingPixels = forwardRef<HTMLDivElement, { hideTitle?: boolean }>(({ hi
       return;
     }
     rebase(pixels);
+    bumpStorefrontVersion();
     qc.invalidateQueries({ queryKey: ["public-layout"] });
     toast({ title: "Tracking pixels saved" });
   };

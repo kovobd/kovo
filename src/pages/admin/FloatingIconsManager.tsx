@@ -13,6 +13,7 @@ import { useDirtyForm } from "@/hooks/useDirtyForm";
 import { resolveImageSrc } from "@/lib/cdnImage";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface FloatingIcon {
   id: string;
@@ -341,6 +342,7 @@ const FloatingIconsManager = ({ hideTitle }: { hideTitle?: boolean }) => {
       setIcons(updated);
       baselineIcons.current = updated;
       iconsDirty.rebase(updated);
+      bumpStorefrontVersion();
       toast({ title: "Icons saved" });
     } catch (err: any) {
       toast({ title: "Save failed", description: err.message, variant: "destructive" });
@@ -363,6 +365,7 @@ const FloatingIconsManager = ({ hideTitle }: { hideTitle?: boolean }) => {
         updated_at: new Date().toISOString(),
       } as any);
       settingsDirty.rebase(settings);
+      bumpStorefrontVersion();
       toast({ title: "Widget settings saved" });
     } catch (err: any) {
       toast({ title: "Save failed", description: err.message, variant: "destructive" });

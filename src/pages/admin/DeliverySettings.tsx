@@ -10,6 +10,7 @@ import { Plus, Trash2, Pencil, X } from "lucide-react";
 import { CURRENCY_SYMBOL } from "@/lib/currency";
 import { Section, FormRow, EmptyState, StickyActionBar } from "@/components/admin/ui";
 import { useDirtyForm } from "@/hooks/useDirtyForm";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Zone {
   id: string;
@@ -65,6 +66,7 @@ const DeliverySettings = ({ hideTitle }: { hideTitle?: boolean }) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       setShowOnPdp(!v);
     } else {
+      bumpStorefrontVersion();
       qc.invalidateQueries({ queryKey: ["public-layout"] });
       toast({ title: v ? "Shown on product page" : "Hidden on product page" });
     }
@@ -108,6 +110,7 @@ const DeliverySettings = ({ hideTitle }: { hideTitle?: boolean }) => {
       setSaving(false);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
+    bumpStorefrontVersion();
     toast({ title: isNew ? "Zone added" : "Zone updated" });
     setEditing(null);
     setIsNew(false);
@@ -121,6 +124,7 @@ const DeliverySettings = ({ hideTitle }: { hideTitle?: boolean }) => {
       toast({ title: "Failed to delete zone", description: error.message, variant: "destructive" });
       return;
     }
+    bumpStorefrontVersion();
     toast({ title: "Zone deleted" });
     fetch();
   };

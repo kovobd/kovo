@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Save, X } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 const ICON_OPTIONS = [
   "Shield", "Heart", "Star", "Leaf", "Truck", "Award", "Clock", "CheckCircle",
@@ -46,6 +47,7 @@ const WhyChooseUsEditor = () => {
     setShowOnPdp(v);
     const { error } = await supabase.from("shop_settings").update({ pdp_show_why_choose_us: v } as any).eq("id", "default");
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); setShowOnPdp(!v); return; }
+    bumpStorefrontVersion();
     qc.invalidateQueries({ queryKey: ["public-layout"] });
     toast({ title: v ? "Enabled on product pages" : "Hidden on product pages" });
   };
@@ -75,6 +77,7 @@ const WhyChooseUsEditor = () => {
       }).eq("id", editing.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     }
+    bumpStorefrontVersion();
     toast({ title: isNew ? "Card added" : "Card updated" });
     setEditing(null);
     fetch();
@@ -82,6 +85,7 @@ const WhyChooseUsEditor = () => {
 
   const handleDelete = async (id: string) => {
     await supabase.from("why_choose_us_cards").delete().eq("id", id);
+    bumpStorefrontVersion();
     toast({ title: "Card deleted" });
     fetch();
   };

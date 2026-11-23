@@ -16,6 +16,7 @@ import HeroSlidesEditor from "@/components/admin/HeroSlidesEditor";
 import WhyChooseUsEditor from "@/components/admin/WhyChooseUsEditor";
 import TestimonialsEditor from "@/components/admin/TestimonialsEditor";
 import FaqEditor from "@/components/admin/FaqEditor";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 
 type Section = { id: string; title?: string | null; enabled: boolean; content: Record<string, any>; sort_order: number };
@@ -102,7 +103,7 @@ const HomepageManager = ({ hideTitle: _hideTitle }: { hideTitle?: boolean }) => 
       setSections(prev => prev.map(s => s.id === section.id ? { ...s, enabled: !v } : s));
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      qc.invalidateQueries({ queryKey: ["public-home"] });
+      bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-home"] });
     }
   };
 
@@ -113,7 +114,7 @@ const HomepageManager = ({ hideTitle: _hideTitle }: { hideTitle?: boolean }) => 
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       setBaseline(prev => ({ ...prev, [section.id]: JSON.stringify(newContent) }));
-      qc.invalidateQueries({ queryKey: ["public-home"] });
+      bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-home"] });
       toast({ title: "Image saved" });
     }
   };
@@ -127,7 +128,7 @@ const HomepageManager = ({ hideTitle: _hideTitle }: { hideTitle?: boolean }) => 
       return;
     }
     setBaseline(prev => ({ ...prev, [section.id]: JSON.stringify(section.content) }));
-    qc.invalidateQueries({ queryKey: ["public-home"] });
+    bumpStorefrontVersion(); qc.invalidateQueries({ queryKey: ["public-home"] });
     setSavedFlash(section.id);
     if (flashTimer.current) window.clearTimeout(flashTimer.current);
     flashTimer.current = window.setTimeout(() => setSavedFlash(null), 1800);

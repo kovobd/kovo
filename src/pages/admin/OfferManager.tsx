@@ -9,6 +9,7 @@ import { Plus, Trash2, X, Percent } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { CURRENCY_SYMBOL } from "@/lib/currency";
 import { PageHeader, StatusPill } from "@/components/admin/ui";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface Offer {
   id: string;
@@ -81,6 +82,7 @@ const OfferManager = () => {
         const { error } = await supabase.from("offers").update(payload as any).eq("id", editing.id);
         if (error) throw error;
       }
+      bumpStorefrontVersion();
       toast({ title: isNew ? "Offer created" : "Offer updated" });
       setEditing(null);
       setIsNew(false);
@@ -95,6 +97,7 @@ const OfferManager = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this offer?")) return;
     await supabase.from("offers").delete().eq("id", id);
+    bumpStorefrontVersion();
     toast({ title: "Offer deleted" });
     fetchData();
   };
@@ -248,6 +251,7 @@ const OfferManager = () => {
                   checked={o.enabled}
                   onCheckedChange={async (v) => {
                     await supabase.from("offers").update({ enabled: v }).eq("id", o.id);
+                    bumpStorefrontVersion();
                     setOffers(offers.map((x) => x.id === o.id ? { ...x, enabled: v } : x));
                   }}
                 />

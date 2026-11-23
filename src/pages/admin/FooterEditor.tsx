@@ -13,6 +13,7 @@ import { useDirtyForm } from "@/hooks/useDirtyForm";
 import IconCropper from "@/components/admin/IconCropper";
 import { uploadToR2 } from "@/lib/r2Upload";
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 
 interface SocialLink { platform: string; url: string; enabled: boolean; icon_url?: string | null; }
 interface FooterLink { label: string; url: string; }
@@ -150,6 +151,7 @@ const FooterEditor = ({ hideTitle }: { hideTitle?: boolean }) => {
     if (error) toast({ title: "Error", description: error.message, variant: "destructive" });
     else {
       rebase(settings);
+      bumpStorefrontVersion();
       qc.invalidateQueries({ queryKey: ["public-layout"] });
       toast({ title: "Footer saved" });
     }

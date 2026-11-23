@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { useDirtyForm } from "@/hooks/useDirtyForm";
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { bumpStorefrontVersion } from "@/lib/storefrontCache";
 import {
   clearPaymentOptionsCache, normalizeMethods, slugifyMethod, validateMethods,
   type PaymentMethodConfig,
@@ -213,6 +214,7 @@ const PaymentSettings = ({ hideTitle }: { hideTitle?: boolean }) => {
     const next = prepared.map((m, i) => ({ ...m, _key: rows[i]._key }));
     setRows(next);
     rebase(next);
+    bumpStorefrontVersion();
     await queryClient.invalidateQueries({ queryKey: ["public-layout"] });
     toast({ title: "Payment methods saved" });
   };
