@@ -510,7 +510,8 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   const location = ssrLocation(url, texts[0]);
   const phone = isPhone(request);
   const shellTag = page.headers.get("ETag");
-  if (location && version && shellTag) {
+  // ?ssr=0 serves the page without server rendering (for comparison and diagnosis).
+  if (location && version && shellTag && url.searchParams.get("ssr") !== "0") {
     const build = `${shellTag.replace(/\W/g, "")}-${SSR_BUILD_ID}`;
     try {
       const cached = await cachedRender(ctx, url.origin, location, phone, build, entries, texts, version);
