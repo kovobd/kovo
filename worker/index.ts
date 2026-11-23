@@ -68,7 +68,6 @@ const STORED_VERSION = "x-kovo-content-version";
 // version is never served, so admin edits reach every visitor right away.
 const VERSION_CHECK_MS = 5000;
 let versionMemo: { value: string | null; at: number } = { value: null, at: 0 };
-let versionInflight: Promise<string | null> | null = null;
 
 async function readContentVersion(env: Env): Promise<string | null> {
   const base = (env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, "");
@@ -90,19 +89,22 @@ async function readContentVersion(env: Env): Promise<string | null> {
   }
 }
 
-/** Current content version (memoised per isolate for a few seconds); null if unknown. */
+/**
+ * Current content version (memoised per isolate for a few seconds); null if unknown.
+ * Only the resolved value is shared between requests: a Worker request may
+ * not await a fetch that another request started (it throws), so each request
+ * that finds the memo expired runs its own check.
+ */
 async function contentVersion(env: Env): Promise<string | null> {
   if (Date.now() - versionMemo.at < VERSION_CHECK_MS) return versionMemo.value;
-  if (!versionInflight) {
-    versionInflight = readContentVersion(env)
-      .then((v) => {
-        // Keep the last known value if the check fails, rather than forgetting it.
-        versionMemo = { value: v ?? versionMemo.value, at: Date.now() };
-        return versionMemo.value;
-      })
-      .finally(() => { versionInflight = null; });
+  try {
+    const v = await readContentVersion(env);
+    // Keep the last known value if the check fails, rather than forgetting it.
+    versionMemo = { value: v ?? versionMemo.value, at: Date.now() };
+  } catch {
+    /* fall through with the last known value */
   }
-  return versionInflight;
+  return versionMemo.value;
 }
 
 /** True if a cached copy was stored under an older content version. */
@@ -300,7 +302,15 @@ export default {
 
     if (request.method === "GET" && url.pathname.startsWith("/api/public/")) {
       const fn = url.pathname.slice("/api/public/".length).replace(/\/+$/, "");
-      if (PUBLIC_FUNCTIONS.has(fn)) return proxyPublicApi(env, ctx, fn, url);
+      if (PUBLIC_FUNCTIONS.has(fn)) {
+        try {
+          return await proxyPublicApi(env, ctx, fn, url);
+        } catch {
+          // Never fail the storefront over a cache problem: pass straight through.
+          const r = await fetchUpstream(env, fn, url.search);
+          return new Response(r.body, { status: r.status, headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache", "X-Kovo-Cache": "BYPASS" } });
+        }
+      }
       return new Response("Not found", { status: 404 });
     }
 
