@@ -52,7 +52,7 @@ export function bumpStorefrontVersion(): string {
   return v;
 }
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useBrowserValue } from "@/lib/hydration";
 
 export function useStorefrontVersion(): string | undefined {
@@ -61,7 +61,7 @@ export function useStorefrontVersion(): string | undefined {
   // after mount instead, which refetches.
   const initial = useBrowserValue<string | undefined>(getStorefrontVersion, undefined);
   const [v, setV] = useState<string | undefined>(initial);
-  useEffect(() => setV(initial), [initial]);
+  useEffect(() => startTransition(() => setV(initial)), [initial]);
   useEffect(() => {
     const onBump = () => setV(getStorefrontVersion());
     const onStorage = (e: StorageEvent) => {

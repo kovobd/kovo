@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PublicApi } from "@/lib/publicApi";
@@ -150,7 +150,10 @@ export const LayoutDataProvider = ({ children }: { children: ReactNode }) => {
     ric(() => inject(0));
   }, [pixels]);
 
-  const value: LayoutData = {
+  // Memoised: a new object on every render (route changes included) would
+  // re-render every consumer, and during hydration push updates into parts
+  // of the page that have not hydrated yet.
+  const value: LayoutData = useMemo(() => ({
     logoDesktop: design?.logo_desktop_url ?? null,
     logoMobile: design?.logo_mobile_url ?? null,
     logoFooter: design?.logo_footer_url ?? null,
@@ -169,7 +172,9 @@ export const LayoutDataProvider = ({ children }: { children: ReactNode }) => {
     },
     directOrderChannels: (layout as any)?.directOrderChannels ?? [],
     loaded,
-  };
+  // `design` and `shop` are derived from `layout`.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [layout, loaded]);
 
   return <LayoutDataContext.Provider value={value}>{children}</LayoutDataContext.Provider>;
 };

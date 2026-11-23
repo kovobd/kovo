@@ -1,10 +1,10 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, startTransition, Suspense, useEffect, useState } from "react";
 import { queryClient } from "@/lib/queryClient";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import { AppFrame, ssrPageRoutes } from "@/routes/ssrRoutes";
+import { AppFrame, lazyPage, ssrPageRoutes } from "@/routes/ssrRoutes";
 import { ssrViewportHint } from "@/lib/viewportHint";
 
 // Providers deferred until after first paint — Radix Tooltip/Toast/Sonner
@@ -16,11 +16,11 @@ const DeferredProviders = lazy(() => import("@/components/layout/DeferredProvide
 // Lazy like every page: the Shop and product pages no longer download the
 // homepage (hero carousel, sections). Measured on a throttled phone, the
 // homepage itself is no slower (its hero photo is preloaded from the HTML).
-const Index = lazy(() => import("./pages/Index"));
+const Index = lazyPage(() => import("./pages/Index"));
 const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
 
-const Shop = lazy(() => import("./pages/Shop"));
-const ProductDetails = lazy(() => import("./pages/ProductDetails"));
+const Shop = lazyPage(() => import("./pages/Shop"));
+const ProductDetails = lazyPage(() => import("./pages/ProductDetails"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Policies = lazy(() => import("./pages/Policies"));
@@ -145,6 +145,14 @@ const Route$ = ({ fallback, children }: { fallback: React.ReactNode; children: R
 );
 
 const SSR_PAGES = { Index, Shop, ProductDetails };
+
+/** Loads the code of the server-rendered page at `pathname` (see lazyPage). */
+export function preloadSsrPage(pathname: string): Promise<unknown> {
+  if (pathname === "/") return Index.preload();
+  if (pathname === "/shop") return Shop.preload();
+  if (/^\/product\/[^/]+\/?$/.test(pathname)) return ProductDetails.preload();
+  return Promise.resolve();
+}
 // Read once: the server's phone/desktop guess for a server-rendered page.
 const VIEWPORT_HINT = ssrViewportHint();
 
@@ -166,8 +174,11 @@ const useAfterPaint = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const idle = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
-    if (idle) idle(() => setReady(true), { timeout: 1500 });
-    else setTimeout(() => setReady(true), 300);
+    // A transition: on a server-rendered page, parts still hydrating keep
+    // their server HTML instead of being re-rendered for this update.
+    const ready = () => startTransition(() => setReady(true));
+    if (idle) idle(ready, { timeout: 1500 });
+    else setTimeout(ready, 300);
   }, []);
   return ready;
 };

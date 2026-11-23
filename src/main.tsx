@@ -1,5 +1,5 @@
 import { createRoot, hydrateRoot } from "react-dom/client";
-import App from "./App.tsx";
+import App, { preloadSsrPage } from "./App.tsx";
 import "./index.css";
 import { ensureR2Preconnect } from "@/lib/cdnImage";
 import { queryClient } from "@/lib/queryClient";
@@ -75,18 +75,23 @@ if (root) {
         // Logged so it shows up when checking pages.
         onRecoverableError: (error) => console.warn("[ssr] hydration mismatch, re-rendered in browser:", error),
       });
-    // Let the browser paint the server HTML first: when the scripts arrive
-    // together with the CSS, hydrating straight away would hold back the
-    // first paint until the whole page has hydrated. The timeout covers tabs
-    // opened in the background, where animation frames do not run.
+    // Hydrate once (1) this page's code has loaded, so no part of the page
+    // waits during hydration, and (2) the browser has painted the server
+    // HTML: when the scripts arrive with the CSS, hydrating straight away
+    // would hold back the first paint. Timeouts cover a slow page chunk and
+    // tabs opened in the background, where animation frames do not run.
     let started = false;
     const start = () => {
       if (started) return;
       started = true;
       hydrate();
     };
-    requestAnimationFrame(() => setTimeout(start, 0));
-    setTimeout(start, 150);
+    const afterPaint = () => {
+      requestAnimationFrame(() => setTimeout(start, 0));
+      setTimeout(start, 150);
+    };
+    preloadSsrPage(window.location.pathname).then(afterPaint, afterPaint);
+    setTimeout(start, 8000);
   } else {
     createRoot(root).render(<App />);
   }

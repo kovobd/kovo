@@ -5,7 +5,7 @@
 // Hydration only works if the server and the browser build the *same* React
 // tree for a page, so both get these route elements and this frame from here
 // rather than each writing their own copy.
-import { Suspense, type ComponentType, type ReactNode } from "react";
+import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { Route } from "react-router-dom";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -17,6 +17,25 @@ import { ViewportHintContext } from "@/lib/viewportHint";
 export const RouteSuspense = ({ fallback, children }: { fallback: ReactNode; children: ReactNode }) => (
   <Suspense fallback={fallback}>{children}</Suspense>
 );
+
+/**
+ * React.lazy plus preload(). Once preloaded, the page renders without
+ * suspending: lazy() gets a thenable that resolves synchronously, which React
+ * 18 resolves on the spot. main.tsx preloads the current page before
+ * hydrating, so hydration never waits on a page chunk; while a boundary waits,
+ * any update above it (state set after paint, a context change) would make
+ * React discard the server HTML there and render it again in the browser.
+ */
+export function lazyPage<T extends ComponentType>(load: () => Promise<{ default: T }>) {
+  let loaded: { default: T } | undefined;
+  const preload = () => load().then((m) => (loaded = m));
+  const Page = lazy(() =>
+    loaded
+      ? ({ then: (resolve: (m: { default: T }) => void) => resolve(loaded!) } as unknown as Promise<{ default: T }>)
+      : preload(),
+  );
+  return Object.assign(Page, { preload });
+}
 
 export interface SsrPages {
   Index: ComponentType;

@@ -5,13 +5,13 @@
 //
 // Only the home, shop and product pages are rendered here; everything else
 // is rendered in the browser as before.
-import { lazy, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { renderToReadableStream } from "react-dom/server.browser";
 import { StaticRouter } from "react-router-dom/server";
 import { Route, Routes } from "react-router-dom";
 import { QueryClient } from "@tanstack/react-query";
 import Layout from "@/components/layout/Layout";
-import { AppFrame, ssrPageRoutes } from "@/routes/ssrRoutes";
+import { AppFrame, lazyPage, ssrPageRoutes } from "@/routes/ssrRoutes";
 import { seedStorefrontQueries, type InlineData } from "@/lib/ssrSeed";
 import { queryClientDefaults } from "@/lib/queryClient";
 
@@ -22,9 +22,9 @@ export const SSR_BUILD_ID: string = __SSR_BUILD_ID__;
 // Lazy exactly like src/App.tsx, so the server tree has the same Suspense
 // boundaries the browser hydrates. (The server bundle inlines these imports.)
 const pages = {
-  Index: lazy(() => import("./pages/Index")),
-  Shop: lazy(() => import("./pages/Shop")),
-  ProductDetails: lazy(() => import("./pages/ProductDetails")),
+  Index: lazyPage(() => import("./pages/Index")),
+  Shop: lazyPage(() => import("./pages/Shop")),
+  ProductDetails: lazyPage(() => import("./pages/ProductDetails")),
 };
 
 /**

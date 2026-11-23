@@ -5,7 +5,7 @@
 // produce what the server produced, which knows nothing about this visitor's
 // storage. Such components start with the server's value and switch to the
 // stored one right after mount (a normal re-render, not a mismatch).
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 // The URL whose server-rendered HTML is being hydrated. Components mounted
 // after a client-side navigation read real values straight away.
@@ -37,7 +37,9 @@ export function useBrowserValue<T>(read: () => T, serverValue: T): T {
   const [value, setValue] = useState<T>(() => (isServerOrHydrating() ? serverValue : read()));
   useEffect(() => {
     const next = read();
-    setValue((prev) => (Object.is(prev, next) ? prev : next));
+    // A transition, so parts of the page still hydrating are not re-rendered
+    // from scratch for it (React would otherwise drop their server HTML).
+    startTransition(() => setValue((prev) => (Object.is(prev, next) ? prev : next)));
     // Read once after mount; callers keep their own subscriptions.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
