@@ -71,6 +71,21 @@ const useIsMobile = () => {
   return m;
 };
 
+type EmblaApi = NonNullable<ReturnType<typeof useEmblaCarousel>[1]>;
+
+/**
+ * Autoplay moves on only once the next slide's photo has finished loading
+ * (or failed), so a slide never arrives as an empty frame on a slow
+ * connection; it just waits for the next tick.
+ */
+function nextSlideReady(api: EmblaApi): boolean {
+  const slides = api.slideNodes();
+  if (slides.length < 2) return true;
+  const next = slides[(api.selectedScrollSnap() + 1) % slides.length];
+  const imgs = next ? Array.from(next.querySelectorAll("img")) : [];
+  return imgs.length > 0 && imgs.every((img) => img.complete);
+}
+
 const HeroBlankFrame = ({ isMobile }: { isMobile: boolean }) => (
   <section className={`relative w-full ${isMobile ? "aspect-[9/16] max-h-[85svh]" : "aspect-[16/9] max-h-[calc(100svh-92px)]"} bg-secondary`} aria-hidden />
 );
@@ -202,7 +217,7 @@ const SingleSliderCarousel = ({ slides, settings, isMobile }: { slides: HeroSlid
   useEffect(() => {
     if (!emblaApi || !settings.autoplay || slides.length <= 1) return;
     const interval = window.setInterval(() => {
-      if (!hoverRef.current) emblaApi.scrollNext();
+      if (!hoverRef.current && nextSlideReady(emblaApi)) emblaApi.scrollNext();
     }, Math.max(2000, settings.transition_speed_ms));
     return () => window.clearInterval(interval);
   }, [emblaApi, settings.autoplay, settings.transition_speed_ms, slides.length]);
@@ -268,7 +283,7 @@ const DualSlider = ({ slides, settings }: { slides: HeroSlide[]; settings: HeroS
   useEffect(() => {
     if (!emblaApi || !settings.autoplay || pairs.length <= 1) return;
     const interval = window.setInterval(() => {
-      if (!hoverRef.current) emblaApi.scrollNext();
+      if (!hoverRef.current && nextSlideReady(emblaApi)) emblaApi.scrollNext();
     }, Math.max(2000, settings.transition_speed_ms));
     return () => window.clearInterval(interval);
   }, [emblaApi, settings.autoplay, settings.transition_speed_ms, pairs.length]);
