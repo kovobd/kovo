@@ -157,24 +157,27 @@ async function cachedPublicText(env: Env, ctx: ExecutionContext, origin: string,
   return cached.text();
 }
 
-const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-
 function heroPreloads(homeJson: string, layoutJson: string | null): string {
   try {
     const slides = JSON.parse(homeJson)?.data?.heroSlides ?? [];
     const settings = JSON.parse(homeJson)?.data?.heroSettings;
     if (!slides.length || (settings && settings.enabled === false) || settings?.hero_type === "video_hero") return "";
     const r2Base = layoutJson ? String(JSON.parse(layoutJson)?.data?.r2PublicBaseUrl || "") : "";
-    const links: string[] = [];
-    for (const [isMobile, media] of [[true, HERO_MOBILE_QUERY], [false, "(min-width: 768px)"]] as const) {
+    // One inline script picks the phone or desktop image and preloads only
+    // that one (Chrome was fetching both when using <link media=…>).
+    const pick = (isMobile: boolean) => {
       const a = heroImageAttrs(slides[0], isMobile, r2Base);
-      if (!a) continue;
-      links.push(
-        `<link rel="preload" as="image" fetchpriority="high" media="${attr(media)}" href="${attr(a.src)}"` +
-          (a.srcSet ? ` imagesrcset="${attr(a.srcSet)}" imagesizes="${attr(a.sizes)}"` : "") + ">",
-      );
-    }
-    return links.join("");
+      return a ? { href: a.src, srcset: a.srcSet || "", sizes: a.sizes } : null;
+    };
+    const options = { q: HERO_MOBILE_QUERY, m: pick(true), d: pick(false) };
+    if (!options.m && !options.d) return "";
+    const json = JSON.stringify(options).replace(/</g, "\\u003c");
+    return (
+      `<script>(function(o){try{var a=matchMedia(o.q).matches?o.m:o.d;if(!a)return;` +
+      `var l=document.createElement("link");l.rel="preload";l.as="image";l.href=a.href;` +
+      `if(a.srcset){l.imageSrcset=a.srcset;l.imageSizes=a.sizes;}l.fetchPriority="high";` +
+      `document.head.appendChild(l);}catch(e){}})(${json})</script>`
+    );
   } catch {
     return "";
   }
@@ -205,9 +208,15 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   headers.delete("Content-Length");
   headers.set("Cache-Control", "no-cache");
   const rewritten = new HTMLRewriter()
+    // After the viewport tag: before it, phones report a 980px layout width,
+    // so the screen-size check would pick the desktop image.
+    .on('meta[name="viewport"]', {
+      element(el) {
+        if (preload) el.after(preload, { html: true });
+      },
+    })
     .on("head", {
       element(el) {
-        if (preload) el.prepend(preload, { html: true });
         if (inline.length) el.append(`<script>window.__kovoData={${inline.join(",")}}</script>`, { html: true });
       },
     })
