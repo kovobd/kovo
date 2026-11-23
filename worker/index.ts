@@ -331,6 +331,8 @@ const SSR_FRESH_SECONDS = 120;
 interface SsrEntry {
   html: string;
   texts: (string | null)[];
+  /** For an empty entry: "rendering" (started; still there means it was stopped, e.g. CPU limit) or "failed: …". */
+  note?: string;
 }
 
 /**
@@ -421,17 +423,21 @@ async function renderAndStore(
     // With no copy to fall back on, first record an empty one: if this render
     // fails, or is stopped for using too much CPU, pages are served
     // browser-rendered and the render is not retried on every request.
-    if (!hasCopy) await storeRender(key, { html: "", texts }, version);
+    if (!hasCopy) await storeRender(key, { html: "", texts, note: "rendering" }, version);
     const inline: Record<string, unknown> = {};
     entries.forEach((e, i) => { inline[`/api/public/${e.fn}${e.search}`] = JSON.parse(texts[i]); });
     let html: string | null = null;
+    let note = "failed: render error";
+    const started = Date.now();
     try {
       html = await renderStorefront(location, inline, phone);
     } catch (err) {
+      note = `failed: ${String((err as Error)?.message || err).slice(0, 120)}`;
       console.error("[ssr] render threw", location, err);
     }
     // A failed render (null) keeps or records an empty copy until it is due again.
-    if (html || !hasCopy) await storeRender(key, { html: html || "", texts }, version);
+    if (html) await storeRender(key, { html, texts, note: `rendered in ${Date.now() - started} ms` }, version);
+    else if (!hasCopy) await storeRender(key, { html: "", texts, note }, version);
   } finally {
     rendering.delete(key.url);
   }
@@ -447,7 +453,7 @@ async function cachedRender(
   entries: { fn: string; search: string }[],
   texts: (string | null)[],
   version: string,
-): Promise<SsrEntry | null> {
+): Promise<{ entry: SsrEntry | null; note: string }> {
   const key = ssrKey(origin, location, phone, build);
   const hit = await caches.default.match(key);
   const current = hit && hit.headers.get(STORED_VERSION) === version ? hit : null;
@@ -470,7 +476,7 @@ async function cachedRender(
       ),
     );
   }
-  return usable ? entry : null;
+  return { entry: usable ? entry : null, note: entry?.note ?? (current ? "" : "none") };
 }
 
 /** The SPA shell (dist/app.html). */
@@ -500,13 +506,16 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   // the embedded data always match.
   let ssr: SsrEntry | null = null;
   let ssrState: "hit" | "miss" | "off" = "off";
+  let ssrNote = "";
   const location = ssrLocation(url, texts[0]);
   const phone = isPhone(request);
   const shellTag = page.headers.get("ETag");
   if (location && version && shellTag) {
     const build = `${shellTag.replace(/\W/g, "")}-${SSR_BUILD_ID}`;
     try {
-      ssr = await cachedRender(ctx, url.origin, location, phone, build, entries, texts, version);
+      const cached = await cachedRender(ctx, url.origin, location, phone, build, entries, texts, version);
+      ssr = cached.entry;
+      ssrNote = cached.note;
       ssrState = ssr ? "hit" : "miss";
     } catch (err) {
       console.error("[ssr] cache read failed", err);
@@ -531,6 +540,9 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   // Whether this page arrived server-rendered: "hit", "miss" (rendering in
   // the background for later visitors) or "off" (not a server-rendered URL).
   headers.set("X-Kovo-SSR", ssrState);
+  // Diagnostics: "rendered in N ms", "rendering" (a render that never finished,
+  // e.g. stopped by the CPU limit) or "failed: …".
+  if (ssrNote) headers.set("X-Kovo-SSR-Note", ssrNote.replace(/[^\x20-\x7e]/g, "?"));
   headers.delete("ETag");
   headers.delete("Content-Length");
   headers.set("Cache-Control", "no-cache");
