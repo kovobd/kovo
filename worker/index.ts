@@ -70,12 +70,15 @@ const STORED_VERSION = "x-kovo-content-version";
 // The version itself is kept in this data centre's edge cache, so requests
 // read it locally instead of waiting on Supabase (Seoul):
 //  - under VERSION_FRESH_MS old: used as is;
-//  - up to VERSION_MAX_STALE_MS old: used, and refreshed in the background;
+//  - up to VERSION_MAX_STALE_MS old (hours): used, and refreshed in the background;
 //  - older or missing: refreshed before answering.
 // Admin saves also POST /api/public/_refresh, which refreshes it at once, so
 // the admin's next page view already shows the change.
 const VERSION_FRESH_MS = 5000;
-const VERSION_MAX_STALE_MS = 60000;
+// Long, so a quiet data centre never makes a visitor wait on Supabase: the
+// stale value is used once while a fresh one is fetched in the background.
+// (Admin saves refresh it at once via /api/public/_refresh.)
+const VERSION_MAX_STALE_MS = 6 * 3600 * 1000;
 const VERSION_PATH = "/api/public/_content-version";
 // Per-isolate copy of the resolved value only: a Worker request may not await
 // a fetch that another request started, so promises are never shared.
@@ -531,8 +534,11 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   });
   const homeIdx = entries.findIndex((e) => e.fn === "public-home");
   const productIdx = entries.findIndex((e) => e.fn === "public-product");
+  // A server-rendered page already has the photo's <img> near the top of the
+  // HTML; a preload as well only made the browser fetch it twice.
   const preload =
-    homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0])
+    ssr ? ""
+    : homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0])
     : productIdx >= 0 && texts[productIdx] ? productPreload(texts[productIdx]!, texts[0])
     : "";
   if (!inline.length && !preload) return page;
@@ -563,6 +569,28 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
             { html: true },
           );
         }
+      },
+    })
+    // On a server-rendered page, start the app only after the first paint.
+    // Loading it as a normal module script lets Chrome run it (and React's
+    // start-up) before painting, which held the ready HTML back by ~200 ms
+    // on phones. modulepreload still downloads it straight away.
+    .on('script[type="module"][src]', {
+      element(el) {
+        if (!ssr) return;
+        const src = el.getAttribute("src") || "";
+        if (!/^\/assets\/[\w.-]+\.js$/.test(src)) return;
+        el.replace(
+          `<link rel="modulepreload" crossorigin href="${src}">` +
+            `<script>(function(){var d=0;function go(){if(d)return;d=1;var s=document.createElement("script");` +
+            `s.type="module";s.crossOrigin="";s.src=${JSON.stringify(src)};document.head.appendChild(s)}` +
+            // rAF runs just before a paint; the timeout after it runs once that paint is done.
+            // A tab opened in the background never paints, so it starts on load;
+            // the long timeout is only a safety net.
+            `if(document.hidden)addEventListener("load",go);else requestAnimationFrame(function(){setTimeout(go,0)});` +
+            `setTimeout(go,4000)})()</script>`,
+          { html: true },
+        );
       },
     })
     .on("div#root", {
