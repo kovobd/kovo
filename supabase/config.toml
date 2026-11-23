@@ -1,5 +1,9 @@
 project_id = "pyzjuxdznayzenxjpiea"
 
+# Public storefront tracking must also accept signed-out publishable-key calls.
+[functions.meta-capi]
+verify_jwt = false
+
 # These functions validate the caller and their admin/staff role internally
 # with auth.getClaims(). Disable the legacy gateway JWT check so ES256-signed
 # user sessions reach that validation instead of being rejected first.

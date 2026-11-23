@@ -96,12 +96,12 @@ async function postWithRetry(apiUrl: string, body: string, accessToken: string):
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  // Require a Supabase JWT (anon or user). verify_jwt defaults to true,
-  // but we double-check here for defense-in-depth in case config drifts.
-  const authHeader = req.headers.get("authorization") || "";
-  if (!authHeader.toLowerCase().startsWith("bearer ") || authHeader.length < 32) {
-    return new Response(JSON.stringify({ error: "unauthorized" }), {
-      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  // Public storefront telemetry: signed-out visitors send a publishable
+  // apikey through the Supabase gateway, not an Authorization JWT.
+  // Never require a user session here; origin and event validation still apply.
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405, headers: { ...corsHeaders, "Allow": "POST, OPTIONS", "Content-Type": "application/json" },
     });
   }
 

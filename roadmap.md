@@ -1,5 +1,7 @@
 # Task roadmap
 
+- [x] Fix and verify signed-out Meta CAPI requests returning 401; live PageView returns 200 (tracking currently unconfigured or disabled).
+
 - [x] Grant admin role to user `319eaea3-3fa9-40b8-a806-d9cd82a9c713`.
 - [x] Restore and verify public storefront content services.
 - [x] Make admin content and product saves refresh cached storefront data.
