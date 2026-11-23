@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 
 export type CartProductMeta = {
   names: Record<string, string>;
@@ -18,6 +18,7 @@ export const cartProductMetaKey = (ids: string[]) =>
 
 async function fetchCartProductMeta(ids: string[]): Promise<CartProductMeta> {
   if (!ids.length) return { names: {}, prices: {}, images: {} };
+  const supabase = await getSupabase();
   const [{ data }, { data: media }] = await Promise.all([
     supabase.from("products").select("id, name, price, sale_price").in("id", ids),
     supabase

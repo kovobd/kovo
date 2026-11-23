@@ -8,6 +8,7 @@ export interface Env {
 
 import { renderStorefront, SSR_BUILD_ID } from "../dist-ssr/entry-server.js";
 import { heroImageAttrs, HERO_MOBILE_QUERY, cdnImageAttrs, PDP_MAIN_IMAGE_SIZES } from "../src/lib/imageUrls";
+import { REST_TABLES, restKey, restQueriesForPath } from "../src/lib/publicRestQueries";
 import { HOME_META, findShopCategory, productMeta, shareImageUrl, shopMeta, type PageMeta } from "../src/lib/pageMeta";
 
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
@@ -54,6 +55,14 @@ async function proxySitemap(env: Env): Promise<Response> {
 // cache instead and refreshes in the background (stale-while-revalidate), so
 // almost every visitor gets the storefront data in a few milliseconds.
 const PUBLIC_FUNCTIONS = new Set(["public-home", "public-layout", "public-shop", "public-product"]);
+// Read-only storefront queries (About, Contact, Policies, Reviews, cart and
+// checkout settings) are cached the same way under /api/public/rest/<table>;
+// only the tables listed in src/lib/publicRestQueries.ts, whose changes bump
+// the content version.
+const REST_PREFIX = "rest/";
+function isRestFn(fn: string): boolean {
+  return fn.startsWith(REST_PREFIX) && REST_TABLES.has(fn.slice(REST_PREFIX.length));
+}
 const EDGE_FRESH_SECONDS: Record<string, number> = {
   "public-home": 120,
   "public-layout": 300,
@@ -157,6 +166,15 @@ function isOutdated(cached: Response, current: string | null): boolean {
 async function fetchUpstream(env: Env, fn: string, search: string): Promise<Response> {
   const base = (env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, "");
   const key = env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+  if (isRestFn(fn)) {
+    // PostgREST would read ?v= (the admin's cache buster) as a column filter.
+    const params = new URLSearchParams(search);
+    params.delete("v");
+    const qs = params.toString();
+    return fetch(`${base}/rest/v1/${fn.slice(REST_PREFIX.length)}${qs ? `?${qs}` : ""}`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
+    });
+  }
   return fetch(`${base}/functions/v1/${fn}${search}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: "application/json" },
   });
@@ -229,7 +247,13 @@ function routeData(pathname: string): { fn: string; search: string }[] {
   const out = [{ fn: "public-layout", search: "" }];
   if (pathname === "/") out.push({ fn: "public-home", search: "" });
   else if (pathname === "/shop") out.push({ fn: "public-shop", search: "" });
-  else {
+  else if (restQueriesForPath(pathname).length) {
+    for (const q of restQueriesForPath(pathname)) {
+      const key = restKey(q);
+      const i = key.indexOf("?");
+      out.push({ fn: `${REST_PREFIX}${key.slice(0, i)}`, search: key.slice(i) });
+    }
+  } else {
     const m = pathname.match(/^\/product\/([^/]+)\/?$/);
     if (m) {
       const q = new URLSearchParams();
@@ -725,7 +749,7 @@ export default {
 
     if (request.method === "GET" && url.pathname.startsWith("/api/public/")) {
       const fn = url.pathname.slice("/api/public/".length).replace(/\/+$/, "");
-      if (PUBLIC_FUNCTIONS.has(fn)) {
+      if (PUBLIC_FUNCTIONS.has(fn) || isRestFn(fn)) {
         try {
           return await proxyPublicApi(env, ctx, fn, url);
         } catch {

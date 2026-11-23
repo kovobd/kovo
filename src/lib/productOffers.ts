@@ -1,5 +1,5 @@
-// Loaded on first use so pages that only show offers never ship the SDK.
-import { getSupabase } from "@/lib/supabaseLazy";
+import { publicRest } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
 import type { CartItem } from "@/data/cartStore";
 
 export interface ProductOffer {
@@ -37,15 +37,8 @@ const CACHE_TTL = 60_000;
 
 export async function getAllProductOffers(): Promise<ProductOffer[]> {
   if (cachedProductOffers && Date.now() - cacheTime < CACHE_TTL) return cachedProductOffers;
-  const supabase = await getSupabase();
-  const { data } = await supabase
-    .from("product_offers")
-    .select(
-      "id,product_id,offer_type,buy_quantity,get_quantity,discount_value,free_product_id,free_variant_id,target_variant_ids,display_text,enabled,min_cart_total,sort_order"
-    )
-    .eq("enabled", true)
-    .order("sort_order")
-    .limit(500);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await publicRest<any[]>(REST_QUERIES.productOffers).catch(() => []);
   cachedProductOffers = ((data ?? []) as any[]).map((o) => ({
     ...o,
     target_variant_ids: Array.isArray(o.target_variant_ids) ? o.target_variant_ids : [],

@@ -1,8 +1,9 @@
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { publicRest } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
 import { Link } from "react-router-dom";
 import { ScrollScene } from "@/components/ui/scroll-scene";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import DynamicIcon from "@/components/ui/DynamicIcon";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
 import { AboutPageSkeleton } from "@/components/ui/page-skeletons";
@@ -37,8 +38,7 @@ const About = () => {
   const { data: sections, isLoading } = useQuery<Section[]>({
     queryKey: ["about-sections"],
     queryFn: async () => {
-      const { data } = await supabase.from("about_sections").select("id,enabled,content,sort_order").order("sort_order");
-      return data ?? [];
+      return (await publicRest<Section[]>(REST_QUERIES.about)) ?? [];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import { getSchemaHealth, type SchemaHealth, resetSchemaHealthCache } from "@/lib/schemaHealth";
 
 const HEALTH_OK_KEY = "kovo:schema-ok";
@@ -8,14 +9,20 @@ interface Props {
 }
 
 /**
- * Runs `schema_health()` once at boot. If the database is uninitialised or
- * objects are missing, replaces the app with a clear diagnostic screen
- * instead of letting individual pages crash.
+ * Runs `schema_health()` once, in the admin only. If the database is
+ * uninitialised or objects are missing, replaces the admin with a clear
+ * diagnostic screen instead of letting individual pages crash.
+ *
+ * Never on the storefront: shoppers gain nothing from it (one more request
+ * per visit), and a passing database hiccup must not replace the shop with a
+ * setup screen.
  */
 export default function SchemaHealthGate({ children }: Props) {
   const [state, setState] = useState<SchemaHealth | null>(null);
+  const inAdmin = useLocation().pathname.startsWith("/admin");
 
   useEffect(() => {
+    if (!inAdmin) return;
     let cancelled = false;
     // A healthy result is remembered for the session, and the check waits
     // until the page has loaded so it never delays what shoppers see.
@@ -35,9 +42,9 @@ export default function SchemaHealthGate({ children }: Props) {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [inAdmin]);
 
-  if (!state) return <>{children}</>;
+  if (!state || !inAdmin) return <>{children}</>;
   if (state.ok === true) return <>{children}</>;
 
   const failure: Extract<SchemaHealth, { ok: false }> = state;

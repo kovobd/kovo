@@ -2,7 +2,9 @@
  * Site reviews data access. All media references are Cloudflare R2 (r2:/r2o:)
  * or external video URLs (YouTube/Vimeo). No Supabase Storage paths are used.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { publicRest } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
+import { getSupabase } from "@/lib/supabaseLazy";
 
 export type ReviewType = "photo" | "video" | "text";
 export type ReviewMediaKind = "image" | "video";
@@ -42,6 +44,9 @@ export interface SiteReviewRow {
 }
 
 export async function fetchSiteReviews(opts: { includeHidden?: boolean } = {}): Promise<SiteReviewRow[]> {
+  // Shoppers (visible reviews only) read the edge-cached copy.
+  if (!opts.includeHidden) return sortReviewMedia(await publicRest<SiteReviewRow[]>(REST_QUERIES.siteReviews));
+  const supabase = await getSupabase();
   const q = supabase
     .from("site_reviews" as any)
     .select("*, media:site_review_media(*)")
@@ -50,12 +55,16 @@ export async function fetchSiteReviews(opts: { includeHidden?: boolean } = {}): 
   if (!opts.includeHidden) (q as any).eq("is_visible", true);
   const { data, error } = await q;
   if (error) throw error;
-  const rows = (data as unknown as SiteReviewRow[]) ?? [];
-  // Sort media inside each review by sort_order
-  rows.forEach((r) => {
+  return sortReviewMedia((data as unknown as SiteReviewRow[]) ?? []);
+}
+
+/** Media inside each review in sort_order. */
+function sortReviewMedia(rows: SiteReviewRow[] | null): SiteReviewRow[] {
+  const list = rows ?? [];
+  list.forEach((r) => {
     if (r.media) r.media.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
   });
-  return rows;
+  return list;
 }
 
 /** Detect YouTube/Vimeo from a pasted URL. Returns id + thumbnail. */

@@ -1,4 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
+import { publicRest, publicRestOne } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
 
 export type PaymentMethod = string;
 export type PaymentMethodType = "cod" | "online";
@@ -105,12 +106,9 @@ export function clearPaymentOptionsCache() {
 
 export async function fetchPaymentOptions(): Promise<PaymentOptions> {
   if (paymentOptionsCache) return paymentOptionsCache;
-  const { data, error } = await supabase
-    .from("payment_settings")
-    .select("methods")
-    .eq("id", "default")
-    .maybeSingle();
-  paymentOptionsCache = resolvePaymentOptions(error ? null : (data as any)?.methods);
+  const data = await publicRestOne<{ methods?: unknown }>(REST_QUERIES.paymentSettings).catch(() => null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  paymentOptionsCache = resolvePaymentOptions((data?.methods ?? null) as any);
   return paymentOptionsCache;
 }
 
@@ -126,11 +124,8 @@ export interface DeliveryZone {
 }
 
 export async function fetchActiveDeliveryZones(): Promise<DeliveryZone[]> {
-  const { data } = await supabase
-    .from("delivery_zones")
-    .select("id,name,zone_name,areas,delivery_charge,shipping_cost,free_delivery_minimum,free_shipping_threshold,estimated_days,enabled,sort_order")
-    .eq("enabled", true)
-    .order("sort_order");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await publicRest<any[]>(REST_QUERIES.deliveryZones).catch(() => []);
   return ((data as any[]) ?? []).map((z) => ({
     id: z.id,
     zone_name: z.zone_name || z.name || "",

@@ -4,7 +4,6 @@ import { MinusIcon, PlusIcon, XIcon, ShoppingBagIcon, ArrowLeftIcon, GiftIcon, S
 import { useCartStore } from "@/data/cartStore";
 import { CURRENCY_SYMBOL, toBanglaDigits } from "@/lib/currency";
 import { useEffect, useState, useMemo } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { getActiveOffers, type ActiveOffer } from "@/lib/offers";
 import { getAllProductOffers, calculateAppliedOffers, getNearQualifyingOffers, type ProductOffer } from "@/lib/productOffers";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";

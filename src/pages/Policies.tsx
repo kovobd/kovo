@@ -1,8 +1,9 @@
 import { useMemo } from "react";
+import { publicRest } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
 import { ScrollScene } from "@/components/ui/scroll-scene";
 import { useSearchParams, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { PoliciesPageSkeleton } from "@/components/ui/page-skeletons";
 import DOMPurify from "dompurify";
@@ -46,9 +47,7 @@ const Policies = () => {
   const { data: policies, isError, isLoading } = useQuery<Policy[]>({
     queryKey: ["policies"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("policies").select("id,title,slug,content,sort_order,enabled").eq("enabled", true).order("sort_order");
-      if (error) throw error;
-      return (data ?? []) as unknown as Policy[];
+      return (await publicRest<Policy[]>(REST_QUERIES.policies)) ?? [];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,

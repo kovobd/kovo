@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { publicRestOne } from "@/lib/publicRest";
+import { REST_QUERIES } from "@/lib/publicRestQueries";
 import { ScrollScene } from "@/components/ui/scroll-scene";
 import { MailIcon, PhoneIcon, MapPinIcon, SendIcon, ExternalLinkIcon } from "@/components/ui/icons";
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabase } from "@/lib/supabaseLazy";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { trackLead } from "@/lib/trackingEvents";
@@ -12,7 +14,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import type { ContactSettings } from "@/types/database";
-import { contactFormSchema } from "@/lib/validation";
 import { ContactPageSkeleton } from "@/components/ui/page-skeletons";
 import { sanitizeMapEmbed } from "@/lib/sanitizeMapEmbed";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
@@ -50,13 +51,7 @@ const Contact = () => {
   const { data: settings, isLoading } = useQuery<ContactSettings>({
     queryKey: ["contact-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("contact_settings")
-        .select("id,page_title,page_intro,phone_number,email_address,show_address,business_address,phone_field_enabled,submit_button_text,social_section_enabled,social_links,faq_shortcut_enabled,faq_shortcut_items,map_enabled,map_embed")
-        .eq("id", "default")
-        .maybeSingle();
-      if (error) throw error;
-      return data as ContactSettings;
+      return (await publicRestOne<ContactSettings>(REST_QUERIES.contact)) as ContactSettings;
     },
     staleTime: 5 * 60 * 1000,
     refetchOnMount: false,
@@ -69,6 +64,8 @@ const Contact = () => {
     e.preventDefault();
     if (submitting) return;
 
+    // The form validator (zod, ~50 KB) loads only when the form is sent.
+    const { contactFormSchema } = await import("@/lib/validation");
     const parsed = contactFormSchema.safeParse(form);
     if (!parsed.success) {
       toast({
@@ -86,6 +83,7 @@ const Contact = () => {
     };
 
     setSubmitting(true);
+    const supabase = await getSupabase();
     const { error } = await supabase.from("contact_submissions").insert(payload);
     setSubmitting(false);
 
