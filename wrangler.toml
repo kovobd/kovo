@@ -13,7 +13,9 @@ not_found_handling = "none"
 html_handling = "none"
 
 [build]
-command = "node scripts/prepare-worker-assets.mjs"
+# Server-side rendering bundle (src/entry-server.tsx → dist-ssr/), imported by
+# the Worker, then the asset tweaks. Runs after the client `vite build`.
+command = "npm run build:ssr && node scripts/prepare-worker-assets.mjs"
 
 [vars]
 VITE_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co"

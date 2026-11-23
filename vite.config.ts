@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-export default defineConfig(() => ({
+export default defineConfig(({ isSsrBuild }) => ({
   server: {
     host: "::",
     port: 8080,
@@ -20,7 +20,25 @@ export default defineConfig(() => ({
   optimizeDeps: {
     include: ["react", "react-dom", "react/jsx-runtime", "react-router-dom", "@tanstack/react-query"],
   },
-  build: {
+  // Server-side rendering bundle for the Cloudflare Worker (`npm run build:ssr`,
+  // entry src/entry-server.tsx): every dependency bundled in, resolved the
+  // way a Worker loads them, as one file with lazy imports inlined.
+  ssr: {
+    noExternal: true,
+    target: "webworker",
+    resolve: { conditions: ["worker", "browser"], externalConditions: ["worker", "browser"] },
+  },
+  // Stamped into the server bundle so cached server-rendered pages from an
+  // earlier deploy are never served with this one (see worker/index.ts).
+  define: isSsrBuild ? { __SSR_BUILD_ID__: JSON.stringify(Date.now().toString(36)) } : {},
+  build: isSsrBuild ? {
+    target: "es2022",
+    copyPublicDir: false,
+    minify: "esbuild",
+    rollupOptions: {
+      output: { format: "es", inlineDynamicImports: true, entryFileNames: "entry-server.js" },
+    },
+  } : {
     target: "es2020",
     cssMinify: true,
     minify: "esbuild",

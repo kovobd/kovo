@@ -1,13 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { persistQueryClient } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ScrollToTop from "@/components/ScrollToTop";
 import Layout from "@/components/layout/Layout";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import SchemaHealthGate from "@/components/SchemaHealthGate";
+import { AppFrame, ssrPageRoutes } from "@/routes/ssrRoutes";
+import { ssrViewportHint } from "@/lib/viewportHint";
 
 // Providers deferred until after first paint — Radix Tooltip/Toast/Sonner
 // aren't needed for the initial LCP frame, so we avoid shipping them on
@@ -133,8 +131,6 @@ if (typeof window !== "undefined") {
 }
 
 import {
-  ShopPageSkeleton,
-  ProductDetailsSkeleton,
   AboutPageSkeleton,
   ContactPageSkeleton,
   PoliciesPageSkeleton,
@@ -146,6 +142,14 @@ import {
 
 const Route$ = ({ fallback, children }: { fallback: React.ReactNode; children: React.ReactNode }) => (
   <Suspense fallback={fallback}>{children}</Suspense>
+);
+
+const SSR_PAGES = { Index, Shop, ProductDetails };
+// Read once: the server's phone/desktop guess for a server-rendered page.
+const VIEWPORT_HINT = ssrViewportHint();
+
+const BrowserRouterWithFlags = ({ children }: { children: React.ReactNode }) => (
+  <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>{children}</BrowserRouter>
 );
 
 const A = ({ children }: { children: React.ReactNode }) => (
@@ -171,21 +175,20 @@ const useAfterPaint = () => {
 const App = () => {
   const providersReady = useAfterPaint();
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        {providersReady && (
-          <Suspense fallback={null}>
-            <DeferredProviders />
-          </Suspense>
-        )}
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <ScrollToTop />
-          <SchemaHealthGate>
+    <AppFrame
+      client={queryClient}
+      deferred={providersReady && (
+        <Suspense fallback={null}>
+          <DeferredProviders />
+        </Suspense>
+      )}
+      router={BrowserRouterWithFlags}
+      isMobileHint={VIEWPORT_HINT}
+    >
           <Routes>
             <Route element={<Layout />}>
-              <Route path="/" element={<Route$ fallback={<div className="min-h-[100svh]" />}><Index /></Route$>} />
-              <Route path="/shop" element={<Route$ fallback={<ShopPageSkeleton />}><Shop /></Route$>} />
-              <Route path="/product/:id" element={<Route$ fallback={<ProductDetailsSkeleton />}><ProductDetails /></Route$>} />
+              {/* Home, shop and product pages are server-rendered by the Worker. */}
+              {ssrPageRoutes(SSR_PAGES)}
               <Route path="/about" element={<Route$ fallback={<AboutPageSkeleton />}><About /></Route$>} />
               <Route path="/contact" element={<Route$ fallback={<ContactPageSkeleton />}><Contact /></Route$>} />
               <Route path="/policies" element={<Route$ fallback={<PoliciesPageSkeleton />}><Policies /></Route$>} />
@@ -260,10 +263,7 @@ const App = () => {
 
             <Route path="*" element={<Route$ fallback={<SimplePageSkeleton />}><NotFound /></Route$>} />
           </Routes>
-          </SchemaHealthGate>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    </AppFrame>
   );
 };
 

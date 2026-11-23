@@ -7,6 +7,16 @@ import type { VariantRow } from "@/lib/variants";
 // invalidates per-product when the product (or its variants / media) changes.
 export async function fetchProductData(slug: string, version?: string) {
   const data: any = await PublicApi.product(slug, version);
+  return toProductPageData(data);
+}
+
+/**
+ * Shapes a public-product payload for the product page. Also used to seed the
+ * React Query cache from data the Worker put in the page (src/lib/ssrSeed.ts),
+ * so server and browser produce the exact same data.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function toProductPageData(data: any) {
   if (!data?.product) return null;
 
   return {

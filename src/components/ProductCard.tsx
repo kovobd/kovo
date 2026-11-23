@@ -10,6 +10,7 @@ import { ShoppingBagIcon, ZapIcon } from "@/components/ui/icons";
 import { getProductPriceRange, parseOptionGroups } from "@/lib/variants";
 import { useLayoutData } from "@/components/layout/LayoutDataProvider";
 import CdnImage from "@/components/ui/CdnImage";
+import { isServerOrHydrating } from "@/lib/hydration";
 import { getR2BaseKey, isR2OriginalRef, isR2VariantRef, resolveImageSrc } from "@/lib/cdnImage";
 
 interface ProductCardProps {
@@ -140,7 +141,11 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
   const [hovered, setHovered] = useState(false);
   const displayImage = (hovered && secondImage ? secondImage : mainImage) ?? null;
   const [addedFeedback, setAddedFeedback] = useState(false);
-  const [loadedImages, setLoadedImages] = useState<Record<string, true>>({});
+  // On a server-rendered page the main photo starts visible (no fade-in), so
+  // it shows as soon as the browser has it, before any JavaScript runs.
+  const [loadedImages, setLoadedImages] = useState<Record<string, true>>(() =>
+    isServerOrHydrating() && mainImage ? { [mainImage]: true } : {},
+  );
   const imgRef = useRef<HTMLImageElement | null>(null);
   const imgLoaded = !!displayImage && loadedImages[displayImage] === true;
 

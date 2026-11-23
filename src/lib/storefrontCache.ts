@@ -53,9 +53,15 @@ export function bumpStorefrontVersion(): string {
 }
 
 import { useEffect, useState } from "react";
+import { useBrowserValue } from "@/lib/hydration";
 
 export function useStorefrontVersion(): string | undefined {
-  const [v, setV] = useState<string | undefined>(() => getStorefrontVersion());
+  // On a server-rendered page, start without a version like the server did
+  // (its data is keyed "v0"); a bumped version (admins only) is applied right
+  // after mount instead, which refetches.
+  const initial = useBrowserValue<string | undefined>(getStorefrontVersion, undefined);
+  const [v, setV] = useState<string | undefined>(initial);
+  useEffect(() => setV(initial), [initial]);
   useEffect(() => {
     const onBump = () => setV(getStorefrontVersion());
     const onStorage = (e: StorageEvent) => {

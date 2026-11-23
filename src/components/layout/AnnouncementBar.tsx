@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { XIcon } from "@/components/ui/icons";
 import { useLayoutData } from "./LayoutDataProvider";
+import { useBrowserValue } from "@/lib/hydration";
 
 const DISMISS_KEY = "announcement_dismissed";
 const BAR_HEIGHT_CLASS = "h-8";
@@ -18,7 +19,11 @@ const getHadBarHint = () => {
 
 const AnnouncementBar = () => {
   const { announcements, announcement, announcementSettings, loaded } = useLayoutData();
-  const [dismissed, setDismissed] = useState(getDismissedState);
+  // Dismissal is remembered in this browser's session, which the server
+  // cannot see: apply it once a server-rendered page has hydrated.
+  const storedDismissed = useBrowserValue(getDismissedState, false);
+  const [dismissedNow, setDismissed] = useState(false);
+  const dismissed = storedDismissed || dismissedNow;
 
   // Prefer list; fall back to legacy single announcement field
   const list = (announcements && announcements.length > 0)

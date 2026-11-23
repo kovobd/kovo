@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBagIcon, MenuIcon, XIcon, SearchIcon, ArrowRightIcon, HomeIcon, TruckIcon, InfoIcon, MailIcon, ShieldCheckIcon, StarIcon } from "@/components/ui/icons";
 import { useCartStore } from "@/data/cartStore";
+import { useAfterHydration } from "@/lib/hydration";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 
 
@@ -34,7 +35,10 @@ const Header = () => {
   const searchTriggerDesktopRef = useRef<HTMLButtonElement>(null);
   const searchTriggerMobileRef = useRef<HTMLButtonElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const totalItems = useCartStore((s) => s.totalItems());
+  // The cart lives in this browser's storage, which the server cannot see:
+  // show the count once a server-rendered page has hydrated.
+  const storedItems = useCartStore((s) => s.totalItems());
+  const totalItems = useAfterHydration() ? storedItems : 0;
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();

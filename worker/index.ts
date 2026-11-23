@@ -5,6 +5,7 @@ export interface Env {
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
+import { renderStorefront, SSR_BUILD_ID } from "../dist-ssr/entry-server.js";
 import { heroImageAttrs, HERO_MOBILE_QUERY, cdnImageAttrs, PDP_MAIN_IMAGE_SIZES } from "../src/lib/imageUrls";
 
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
@@ -239,19 +240,17 @@ function routeData(pathname: string): { fn: string; search: string }[] {
  * predates the latest admin change (refreshed in the background; the app then
  * fetches it from /api/public itself, which waits for the fresh copy).
  */
-async function cachedPublicText(env: Env, ctx: ExecutionContext, origin: string, fn: string, search: string): Promise<string | null> {
+async function cachedPublicText(
+  env: Env,
+  ctx: ExecutionContext,
+  origin: string,
+  fn: string,
+  search: string,
+  version: string | null,
+): Promise<string | null> {
   const cache = caches.default;
   const cacheKey = new Request(`${origin}/api/public/${fn}${search}`, { method: "GET" });
-  // Wait briefly for the version check; if it is slow, skip inlining rather
-  // than risk inlining data the admin has already changed.
-  const SLOW = Symbol("slow");
-  const versionOrSlow = Promise.race([
-    contentVersion(env, ctx, origin),
-    new Promise<typeof SLOW>((r) => setTimeout(() => r(SLOW), 400)),
-  ]);
-  const [cached, versionResult] = await Promise.all([cache.match(cacheKey), versionOrSlow]);
-  if (versionResult === SLOW) return null;
-  const version = versionResult;
+  const cached = await cache.match(cacheKey);
   const refresh = () =>
     ctx.waitUntil(
       fetchUpstream(env, fn, search)
@@ -313,6 +312,167 @@ function productPreload(productJson: string, layoutJson: string | null): string 
   }
 }
 
+// ── Server-side rendering ──────────────────────────────────────────────────
+// Home, shop and product pages arrive with their HTML already rendered
+// (src/entry-server.tsx), so text and layout show before any JavaScript runs;
+// the browser then hydrates that HTML (src/main.tsx).
+//
+// A visitor never waits for a render: pages are rendered in the background
+// (after the response is sent) and kept in this data centre's edge cache per
+// content version, together with the exact data they were rendered from. That
+// data is what gets embedded in the page, so the browser's first render
+// matches the HTML. Until a render is cached, or if rendering fails, the page
+// is served as before (browser-rendered).
+const SSR_PREFIX = "/__kovo/ssr";
+// Re-render (in the background) after this long even without an admin
+// change, like the data itself, so time-based content (offers) stays current.
+const SSR_FRESH_SECONDS = 120;
+
+interface SsrEntry {
+  html: string;
+  texts: (string | null)[];
+}
+
+/**
+ * The location to render (path plus the query parameters that change the
+ * first render), or null if this URL should not be server-rendered. Only
+ * known values are accepted, so arbitrary query strings cannot create
+ * unlimited renders.
+ */
+function ssrLocation(url: URL, layoutJson: string | null): string | null {
+  const path = url.pathname;
+  if (path === "/") return "/";
+  if (/^\/product\/[^/]+$/.test(path)) return path;
+  if (path !== "/shop") return null;
+  // Shop reads ?category= and ?brand= on first render (q is applied later).
+  const category = url.searchParams.get("category");
+  const brand = url.searchParams.get("brand");
+  if (!category && !brand) return "/shop";
+  try {
+    const layout = layoutJson ? JSON.parse(layoutJson)?.data : null;
+    const known = (list: Array<{ name?: string; slug?: string }> | undefined, v: string | null) =>
+      !v || (list ?? []).some((x) => x?.name === v || x?.slug === v);
+    if (!known(layout?.categories, category) || !known(layout?.brands, brand)) return null;
+  } catch {
+    return null;
+  }
+  const q = new URLSearchParams();
+  if (category) q.set("category", category);
+  if (brand) q.set("brand", brand);
+  return `/shop?${q.toString()}`;
+}
+
+/**
+ * Phone or not, from the request headers. The hero renders a different layout
+ * on phones, and the server cannot measure the screen, so it renders (and
+ * caches) a phone and a desktop version; the browser starts hydration with
+ * the same answer (src/lib/viewportHint.tsx). Tablets count as desktop, which
+ * matches the hero's (max-width: 767px) breakpoint.
+ */
+function isPhone(request: Request): boolean {
+  const hint = request.headers.get("sec-ch-ua-mobile");
+  if (hint === "?1") return true;
+  if (hint === "?0") return false;
+  const ua = request.headers.get("user-agent") || "";
+  return /iPhone|iPod|Android.+Mobile|Mobi/i.test(ua) && !/iPad|Tablet/i.test(ua);
+}
+
+/**
+ * Cache key for a render. `build` ties it to this deploy: the page shell's
+ * ETag (changes with the browser JavaScript) plus the server bundle's build
+ * ID, so HTML rendered by an earlier deploy is never hydrated by this one.
+ */
+function ssrKey(origin: string, location: string, phone: boolean, build: string): Request {
+  const sep = location.includes("?") ? "&" : "?";
+  const q = new URLSearchParams({ device: phone ? "phone" : "desktop", build });
+  return new Request(`${origin}${SSR_PREFIX}${location}${sep}${q.toString()}`, { method: "GET" });
+}
+
+function storeRender(key: Request, body: SsrEntry, version: string): Promise<void> {
+  return caches.default.put(
+    key,
+    new Response(JSON.stringify(body), {
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": `public, max-age=${EDGE_KEEP_SECONDS}`,
+        [STORED_AT]: String(Date.now()),
+        [STORED_VERSION]: version,
+      },
+    }),
+  );
+}
+
+// Renders running in this isolate (keys only: promises are never shared
+// between requests), so a burst of visitors starts one render, not many.
+const rendering = new Set<string>();
+
+async function renderAndStore(
+  key: Request,
+  location: string,
+  phone: boolean,
+  entries: { fn: string; search: string }[],
+  texts: string[],
+  version: string,
+  hasCopy: boolean,
+): Promise<void> {
+  if (rendering.has(key.url)) return;
+  rendering.add(key.url);
+  try {
+    // With no copy to fall back on, first record an empty one: if this render
+    // fails, or is stopped for using too much CPU, pages are served
+    // browser-rendered and the render is not retried on every request.
+    if (!hasCopy) await storeRender(key, { html: "", texts }, version);
+    const inline: Record<string, unknown> = {};
+    entries.forEach((e, i) => { inline[`/api/public/${e.fn}${e.search}`] = JSON.parse(texts[i]); });
+    let html: string | null = null;
+    try {
+      html = await renderStorefront(location, inline, phone);
+    } catch (err) {
+      console.error("[ssr] render threw", location, err);
+    }
+    // A failed render (null) keeps or records an empty copy until it is due again.
+    if (html || !hasCopy) await storeRender(key, { html: html || "", texts }, version);
+  } finally {
+    rendering.delete(key.url);
+  }
+}
+
+/** A cached render for this page and content version (refreshing it in the background when due). */
+async function cachedRender(
+  ctx: ExecutionContext,
+  origin: string,
+  location: string,
+  phone: boolean,
+  build: string,
+  entries: { fn: string; search: string }[],
+  texts: (string | null)[],
+  version: string,
+): Promise<SsrEntry | null> {
+  const key = ssrKey(origin, location, phone, build);
+  const hit = await caches.default.match(key);
+  const current = hit && hit.headers.get(STORED_VERSION) === version ? hit : null;
+  const age = current ? (Date.now() - Number(current.headers.get(STORED_AT) || 0)) / 1000 : Infinity;
+  let entry: SsrEntry | null = null;
+  if (current) {
+    try {
+      entry = (await current.json()) as SsrEntry;
+    } catch {
+      entry = null;
+    }
+  }
+  const usable = !!entry?.html && entry.texts?.length === entries.length && entry.texts.every(Boolean);
+  // Render now (in the background, after this response) if there is no copy
+  // for this version or it is due, and the data for it is at hand.
+  if (age > SSR_FRESH_SECONDS && texts.every((t): t is string => !!t)) {
+    ctx.waitUntil(
+      renderAndStore(key, location, phone, entries, texts as string[], version, usable).catch((err) =>
+        console.error("[ssr] background render failed", location, err),
+      ),
+    );
+  }
+  return usable ? entry : null;
+}
+
 /** The SPA shell (dist/app.html). */
 function fetchShell(env: Env, request: Request, url: URL): Promise<Response> {
   return env.ASSETS.fetch(new Request(`${url.origin}/app.html`, { method: "GET", headers: request.headers }));
@@ -322,8 +482,38 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   const page = await fetchShell(env, request, url);
   if (!(page.headers.get("Content-Type") || "").includes("text/html")) return page;
 
+  // Wait briefly for the content version; if it is slow, skip inlining (and
+  // server rendering) rather than risk serving data the admin has changed.
+  const SLOW = Symbol("slow");
+  const versionResult = await Promise.race([
+    contentVersion(env, ctx, url.origin),
+    new Promise<typeof SLOW>((r) => setTimeout(() => r(SLOW), 400)),
+  ]);
+  if (versionResult === SLOW) return page;
+  const version = versionResult;
+
   const entries = routeData(url.pathname);
-  const texts = await Promise.all(entries.map((e) => cachedPublicText(env, ctx, url.origin, e.fn, e.search)));
+  let texts = await Promise.all(entries.map((e) => cachedPublicText(env, ctx, url.origin, e.fn, e.search, version)));
+
+  // Server-rendered HTML for this page, if one is cached for the current
+  // content version. Its data replaces the freshly read copy so the page and
+  // the embedded data always match.
+  let ssr: SsrEntry | null = null;
+  let ssrState: "hit" | "miss" | "off" = "off";
+  const location = ssrLocation(url, texts[0]);
+  const phone = isPhone(request);
+  const shellTag = page.headers.get("ETag");
+  if (location && version && shellTag) {
+    const build = `${shellTag.replace(/\W/g, "")}-${SSR_BUILD_ID}`;
+    try {
+      ssr = await cachedRender(ctx, url.origin, location, phone, build, entries, texts, version);
+      ssrState = ssr ? "hit" : "miss";
+    } catch (err) {
+      console.error("[ssr] cache read failed", err);
+    }
+    if (ssr) texts = ssr.texts;
+  }
+
   const inline: string[] = [];
   entries.forEach((e, i) => {
     // The cached text is JSON; escape "<" so it cannot close the script tag.
@@ -338,6 +528,9 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   if (!inline.length && !preload) return page;
 
   const headers = new Headers(page.headers);
+  // Whether this page arrived server-rendered: "hit", "miss" (rendering in
+  // the background for later visitors) or "off" (not a server-rendered URL).
+  headers.set("X-Kovo-SSR", ssrState);
   headers.delete("ETag");
   headers.delete("Content-Length");
   headers.set("Cache-Control", "no-cache");
@@ -351,7 +544,17 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
     })
     .on("head", {
       element(el) {
-        if (inline.length) el.append(`<script>window.__kovoData={${inline.join(",")}}</script>`, { html: true });
+        if (inline.length) {
+          el.append(
+            `<script>window.__kovoData={${inline.join(",")}}${ssr ? `;window.__kovoSSR=true;window.__kovoSSRMobile=${phone}` : ""}</script>`,
+            { html: true },
+          );
+        }
+      },
+    })
+    .on("div#root", {
+      element(el) {
+        if (ssr) el.setInnerContent(ssr.html, { html: true });
       },
     })
     .transform(new Response(page.body, { status: page.status, headers }));

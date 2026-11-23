@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { isServerOrHydrating } from "@/lib/hydration";
 import { resolveImageSrc, isResizableUrl, resizedSrcSet, isR2VariantRef, getR2BaseKey, buildSrcSet } from "@/lib/cdnImage";
 
 const useReduced = () => {
@@ -39,7 +40,10 @@ export const ScrollScene = React.forwardRef<HTMLDivElement, ScrollSceneProps>(
     // Reveal via IntersectionObserver — elements already in (or above) the
     // viewport on mount render fully visible immediately, so there is no
     // initial blank-frame flicker. Below-the-fold elements fade up on enter.
-    const [shown, setShown] = React.useState(false);
+    // Server-rendered pages start visible, so their content shows before any
+    // JavaScript runs; sections still below the fold are hidden again right
+    // after hydration (off screen, so unseen) and fade up on scroll as usual.
+    const [shown, setShown] = React.useState(isServerOrHydrating);
     React.useEffect(() => {
       if (reduced) { setShown(true); return; }
       const el = innerRef.current;
@@ -48,6 +52,7 @@ export const ScrollScene = React.forwardRef<HTMLDivElement, ScrollSceneProps>(
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
       if (rect.top < vh * 0.95) { setShown(true); return; }
+      setShown(false);
       const io = new IntersectionObserver(
         (entries) => entries.forEach((e) => { if (e.isIntersecting) { setShown(true); io.disconnect(); } }),
         { rootMargin: "0px 0px -8% 0px", threshold: 0.01 }

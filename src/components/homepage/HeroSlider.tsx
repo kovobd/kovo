@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
 import { resolveImageSrc, getR2Base } from "@/lib/cdnImage";
 import { heroImageAttrs, HERO_MOBILE_QUERY } from "@/lib/imageUrls";
+import { useViewportHint } from "@/lib/viewportHint";
 
 export type InteractionMode = "buttons" | "image" | "both";
 
@@ -52,10 +53,13 @@ interface HeroSliderProps {
 
 const MOBILE_QUERY = HERO_MOBILE_QUERY;
 const useIsMobile = () => {
-  // Read the viewport synchronously so phones never start downloading the
-  // desktop hero image on the first render.
+  // On a server-rendered page, start from the server's phone/desktop guess so
+  // hydration matches its HTML (the effect below corrects it if the screen
+  // disagrees). Otherwise read the viewport synchronously so phones never
+  // start downloading the desktop hero image on the first render.
+  const hint = useViewportHint();
   const [m, setM] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches,
+    hint ?? (typeof window !== "undefined" && window.matchMedia(MOBILE_QUERY).matches),
   );
   useEffect(() => {
     const mq = window.matchMedia(MOBILE_QUERY);

@@ -26,3 +26,6 @@ scripts/.r2-migration-state.json
 
 # Wrangler local dev state
 .wrangler/
+
+# Server-side rendering bundle, built on every deploy (wrangler.toml [build])
+dist-ssr/
