@@ -15,7 +15,7 @@ interface Section { id: string; enabled: boolean; sort_order: number; content: a
 const About = () => {
   useDocumentMeta({
     title: "About Kovo",
-    description: "Meet Kovo, an online store in Bangladesh with cash on delivery across the country.",
+    description: "Meet Kovo, an online store for bags and accessories in Bangladesh.",
     canonicalPath: "/about",
   });
   useJsonLd("ld-about", {
@@ -23,7 +23,7 @@ const About = () => {
     "@type": "AboutPage",
     name: "About Kovo",
     url: `${SITE_URL}/about`,
-    description: "Kovo is an online store in Bangladesh with cash on delivery across the country.",
+    description: "Kovo sells bags and accessories online across Bangladesh, with cash on delivery.",
     mainEntity: { "@type": "Organization", name: "Kovo", url: SITE_URL },
   });
   useJsonLd("ld-about-breadcrumb", {

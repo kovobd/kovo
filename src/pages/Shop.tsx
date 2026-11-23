@@ -197,7 +197,7 @@ const Shop = () => {
   const seoDescription = activeCategory
     ? ((activeCategory as any).meta_description
         || `Browse ${(activeCategory as any).name} from Kovo. Cash on delivery across Bangladesh.`)
-    : "Browse the full Kovo collection. Cash on delivery across Bangladesh.";
+    : "Shop Kovo bags, wallets and accessories. Cash on delivery across Bangladesh.";
   const seoImage = activeCategory
     ? ((activeCategory as any).featured_image_url || (activeCategory as any).image_url || undefined)
     : undefined;

@@ -2,7 +2,7 @@
 // No rebuild required after creating/editing/deleting products, categories, policies.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const BASE_URL = Deno.env.get("SITEMAP_BASE_URL") || "https://gothicvault.shop";
+const BASE_URL = Deno.env.get("SITEMAP_BASE_URL") || "https://kovobd.com";
 
 const xmlHeaders = {
   "Content-Type": "application/xml; charset=utf-8",

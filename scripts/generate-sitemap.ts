@@ -4,7 +4,7 @@ import { writeFileSync } from "fs";
 import { resolve } from "path";
 import { createClient } from "@supabase/supabase-js";
 
-const BASE_URL = "https://gothicvault.shop";
+const BASE_URL = "https://kovobd.com";
 
 interface SitemapEntry {
   path: string;

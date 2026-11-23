@@ -95,7 +95,7 @@ const ProductDetails = () => {
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 160)
-    : "Shop Kovo online. Cash on delivery across Bangladesh.";
+    : "Bags and accessories from Kovo. Cash on delivery across Bangladesh.";
   useDocumentMeta({
     title: product?.name ? `${product.name} — Kovo` : "Product — Kovo",
     description: cleanDescription,

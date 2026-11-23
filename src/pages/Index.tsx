@@ -26,7 +26,7 @@ const LazyAccordion = lazy(() => import("@/components/ui/accordion").then(mod =>
   default: forwardRef<HTMLDivElement, { faqs: HomeFaq[] }>(({ faqs }, ref) => (
     <mod.Accordion ref={ref} type="single" collapsible className="space-y-2">
       {faqs.map((faq) => (
-        <mod.AccordionItem key={faq.id} value={faq.id} className="bg-background rounded-xl px-5 border-none">
+        <mod.AccordionItem key={faq.id} value={faq.id} className="bg-background px-5 border border-border">
           <mod.AccordionTrigger className="text-[13px] sm:text-sm font-medium text-foreground py-4 hover:no-underline text-left">{faq.question}</mod.AccordionTrigger>
           <mod.AccordionContent className="text-[13px] sm:text-sm text-muted-foreground pb-4">{faq.answer}</mod.AccordionContent>
         </mod.AccordionItem>
@@ -160,8 +160,8 @@ const Index = () => {
   const brandSection = getContent("brands_showcase");
 
   useDocumentMeta({
-    title: "Kovo | Shop Online in Bangladesh",
-    description: "Kovo — shop online in Bangladesh. Cash on delivery across the country.",
+    title: "Kovo | Bags & Accessories in Bangladesh",
+    description: "Kovo — bags and accessories, delivered across Bangladesh with cash on delivery.",
     canonicalPath: "/",
   });
 
@@ -172,7 +172,7 @@ const Index = () => {
   return (
     <div style={{ minHeight: '100vh' }} className="contain-content">
       {/* Visually hidden H1 for SEO/A11y — describes the site without altering the hero design */}
-      <h1 className="sr-only">Kovo — Shop Online in Bangladesh</h1>
+      <h1 className="sr-only">Kovo — Bags and Accessories in Bangladesh</h1>
       {heroEnabled && (
         <div className="relative" data-gv-hero>
           <HeroSlider
@@ -198,7 +198,7 @@ const Index = () => {
             <div className="h-6 w-40 mx-auto bg-muted rounded animate-pulse" />
             <div className="h-3 w-56 mx-auto bg-muted/70 rounded animate-pulse" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i}>
                 <div className="aspect-[4/5] bg-muted rounded-[20px] sm:rounded-[24px] animate-pulse" />
@@ -220,13 +220,13 @@ const Index = () => {
                 <div className="inline-flex items-center gap-2 bg-foreground text-background px-3.5 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-widest mb-2.5">
                   <SparklesIcon size={12} /> Limited time offer
                 </div>
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">Don't miss out!</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">Don't miss out!</h2>
               </FadeSection>
               <FadeSection>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {activeOffers.map((offer) => (
                     <DeepTilt key={offer.id} intensity={12}>
-                    <Link to="/shop" className="group relative overflow-hidden glass-card rounded-xl p-4 sm:p-5 hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 trust-badge block h-full" style={{ transformStyle: "preserve-3d" }}>
+                    <Link to="/shop" className="group relative overflow-hidden glass-card p-4 sm:p-5 hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 trust-badge block h-full" style={{ transformStyle: "preserve-3d" }}>
                       <div className="flex items-center gap-2.5 mb-2" style={{ transform: "translateZ(30px)" }}>
                         <span className="inline-flex items-center gap-1 bg-foreground text-background text-[11px] font-bold px-2.5 py-1 rounded-[2px] shadow-sm">
                           <GiftIcon size={11} />
@@ -251,12 +251,12 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("featured") && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding">
               <FadeSection className="text-center mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">{featuredSection.section_title || "Featured Collection"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">{featuredSection.section_title || "Featured Collection"}</h2>
                 {featuredSection.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 max-w-md mx-auto">{featuredSection.subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mt-4" />
               </FadeSection>
               {featured.length > 0 && (
-                <div ref={featuredGrid.ref} className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10 ${featuredGrid.className}`}>
+                <div ref={featuredGrid.ref} className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10 ${featuredGrid.className}`}>
                   {featured.map((p, i) => {
                     const r = data?.featuredVariantRanges?.[p.id];
                     return <ProductCard key={p.id} product={p} categoryName={p.category_id ? categoryMap[p.category_id] : undefined} offers={activeOffers} priority={i < 4} variantPriceMin={r?.min ?? null} variantPriceMax={r?.max ?? null} variantOrigPriceMin={r?.origMin ?? null} variantOrigPriceMax={r?.origMax ?? null} />;
@@ -270,12 +270,12 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("bestsellers") && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding section-alt">
               <FadeSection className="text-center mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">{bsSection.section_title || "Best Sellers"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">{bsSection.section_title || "Best Sellers"}</h2>
                 {bsSection.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2 max-w-md mx-auto">{bsSection.subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mt-4" />
               </FadeSection>
               {bestSellers.length > 0 && (
-                <div ref={bsGrid.ref} className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10 ${bsGrid.className}`}>
+                <div ref={bsGrid.ref} className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-4 sm:gap-y-9 lg:gap-x-5 lg:gap-y-10 ${bsGrid.className}`}>
                   {bestSellers.map((p) => {
                     const r = deferred?.bestSellerVariantRanges?.[p.id];
                     return <ProductCard key={p.id} product={p} categoryName={p.category_id ? categoryMap[p.category_id] : undefined} offers={activeOffers} variantPriceMin={r?.min ?? null} variantPriceMax={r?.max ?? null} variantOrigPriceMin={r?.origMin ?? null} variantOrigPriceMax={r?.origMax ?? null} />;
@@ -289,14 +289,14 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("categories_showcase") && showcaseCategories.length > 0 && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding cv-auto">
               <FadeSection className="text-center mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">{catSection.section_title || "Shop by Category"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">{catSection.section_title || "Shop by Category"}</h2>
                 {catSection.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">{catSection.subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mt-4" />
               </FadeSection>
-              <div ref={catGrid.ref} className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5 ${catGrid.className}`}>
+              <div ref={catGrid.ref} className={`grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-5 ${catGrid.className}`}>
                 {showcaseCategories.map((cat) => (
                   <DeepTilt key={cat.id} intensity={12}>
-                  <Link to={`/shop?category=${encodeURIComponent(cat.name)}`} className="group relative block aspect-[4/3] rounded-2xl overflow-hidden bg-secondary shadow-sm" style={{ transformStyle: "preserve-3d" }}>
+                  <Link to={`/shop?category=${encodeURIComponent(cat.name)}`} className="group relative block aspect-[4/3] overflow-hidden bg-secondary" style={{ transformStyle: "preserve-3d" }}>
                     {cat.image_url ? (
                       <img src={resolveImageSrc(cat.image_url, 400)} alt={cat.name} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" loading="lazy" decoding="async" width={400} height={300} />
                     ) : (
@@ -304,7 +304,7 @@ const Index = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/15 to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-4" style={{ transform: "translateZ(36px)" }}>
-                      <h3 className="text-sm sm:text-base font-semibold text-white drop-shadow-sm">{cat.name}</h3>
+                      <h3 className="text-[12px] sm:text-[13px] font-medium uppercase tracking-[0.16em] text-white">{cat.name}</h3>
                     </div>
                   </Link>
                   </DeepTilt>
@@ -316,7 +316,7 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("brands_showcase") && brands.length > 0 && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding cv-auto">
               <FadeSection className="text-center mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">{brandSection.section_title || "Our Brands"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">{brandSection.section_title || "Our Brands"}</h2>
                 {brandSection.subtitle && <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 sm:mt-2">{brandSection.subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mt-4" />
               </FadeSection>
@@ -327,7 +327,7 @@ const Index = () => {
                     <DeepTilt key={brand.id} intensity={12}>
                       <Link
                         to={`/shop?brand=${encodeURIComponent(brand.slug || brand.name)}`}
-                        className="group relative block aspect-[4/3] rounded-2xl overflow-hidden bg-secondary shadow-sm"
+                        className="group relative block aspect-[4/3] overflow-hidden bg-secondary"
                         style={{ transformStyle: "preserve-3d" }}
                         aria-label={brand.name}
                       >
@@ -360,20 +360,20 @@ const Index = () => {
             <section className="py-8 sm:py-10 lg:py-14 section-padding cv-auto">
               <div className="grid lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-14 items-center">
                 <FadeSection>
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground mb-3 sm:mb-4">{brandStory.title || "Our Story"}</h2>
+                  <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground mb-3 sm:mb-4">{brandStory.title || "Our Story"}</h2>
                   <div className="premium-divider max-w-[40px] mb-4" />
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-5 sm:mb-6">
                     {brandStory.text || ""}
                   </p>
                   {brandStory.button_link && brandStory.button_text && (
-                    <Link to={brandStory.button_link} className="inline-flex items-center text-sm font-medium text-primary border-b border-primary/50 pb-0.5 hover:border-primary transition-colors">
+                    <Link to={brandStory.button_link} className="btn-pill-ghost">
                       {brandStory.button_text} →
                     </Link>
                   )}
                 </FadeSection>
                 <FadeSection>
                   <DeepTilt intensity={10}>
-                    <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-secondary shadow-lg" style={{ transformStyle: "preserve-3d" }}>
+                    <div className="aspect-[4/3] overflow-hidden bg-secondary" style={{ transformStyle: "preserve-3d" }}>
                       <img src={resolveImageSrc(brandStory.image, 800) || "/placeholder.svg"} alt="Our Story" className="w-full h-full object-cover" loading="lazy" decoding="async" width={600} height={450} />
                     </div>
                   </DeepTilt>
@@ -386,7 +386,7 @@ const Index = () => {
             <section className="py-8 sm:py-10 lg:py-14 section-padding cv-auto">
               <FadeSection>
                 <DeepTilt intensity={8}>
-                  <div className="relative aspect-[16/7] sm:aspect-[16/6] lg:aspect-[16/5] rounded-2xl overflow-hidden shadow-lg" style={{ transformStyle: "preserve-3d" }}>
+                  <div className="relative aspect-[4/5] sm:aspect-[16/7] lg:aspect-[16/6] overflow-hidden" style={{ transformStyle: "preserve-3d" }}>
                     <img
                       src={resolveImageSrc(getContent("featured_image").image, 1600)}
                       alt={getContent("featured_image").section_title || "Featured"}
@@ -412,7 +412,7 @@ const Index = () => {
                         {getContent("featured_image").button_link && getContent("featured_image").button_text && (
                           <Link
                             to={getContent("featured_image").button_link}
-                            className="mt-5 inline-flex items-center gap-2 bg-white text-foreground px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-white/90 active:scale-[0.97] transition-all shadow-md"
+                            className="mt-5 inline-flex items-center gap-2 bg-white text-foreground px-7 py-3 rounded-[2px] text-[12px] font-medium uppercase tracking-[0.14em] hover:bg-white/90 active:scale-[0.98] transition-all"
                           >
                             {getContent("featured_image").button_text} <ArrowRightIcon size={14} />
                           </Link>
@@ -428,15 +428,15 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("why_choose_us") && whyCards.length > 0 && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding section-alt contain-content">
               <FadeSection className="text-center mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">{sectionContent("why_choose_us").section_title || "Why Choose Us"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground">{sectionContent("why_choose_us").section_title || "Why Choose Us"}</h2>
                 {sectionContent("why_choose_us").subtitle && <p className="text-sm text-muted-foreground mt-2">{sectionContent("why_choose_us").subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mt-4" />
               </FadeSection>
               <div ref={whyGrid.ref} className={`grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 ${whyGrid.className}`}>
                 {whyCards.map((card, idx) => (
                   <DeepTilt key={card.id} intensity={14}>
-                  <div className="text-center p-4 sm:p-6 glass-card rounded-2xl hover:-translate-y-0.5 transition-transform duration-300 h-full" style={{ transformStyle: "preserve-3d" }}>
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3 sm:mb-4 animate-float" style={{ animationDelay: `${idx * 0.5}s`, transform: "translateZ(40px)" }}>
+                  <div className="text-center p-5 sm:p-7 bg-background border border-border h-full" style={{ transformStyle: "preserve-3d" }}>
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center mx-auto mb-3 sm:mb-4" style={{ animationDelay: `${idx * 0.5}s`, transform: "translateZ(40px)" }}>
                       <DynamicIcon name={card.icon_name || "Shield"} className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                     </div>
                     <h3 className="text-sm font-semibold text-foreground mb-1.5" style={{ transform: "translateZ(28px)" }}>{card.title}</h3>
@@ -473,10 +473,10 @@ const Index = () => {
           {hasLoadedHomepageData && isEnabled("faq") && faqs.length > 0 && (
             <section className="py-8 sm:py-10 lg:py-14 section-padding section-alt contain-content">
               <FadeSection className="max-w-3xl mx-auto">
-                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground text-center mb-2">{sectionContent("faq").section_title || "Frequently Asked Questions"}</h2>
+                <h2 className="text-[22px] sm:text-[26px] lg:text-[30px] font-medium tracking-[-0.01em] text-foreground text-center mb-2">{sectionContent("faq").section_title || "Frequently Asked Questions"}</h2>
                 {sectionContent("faq").subtitle && <p className="text-sm text-muted-foreground text-center mb-2">{sectionContent("faq").subtitle}</p>}
                 <div className="premium-divider max-w-[60px] mx-auto mb-6 sm:mb-8" />
-                <Suspense fallback={<div className="space-y-2">{faqs.map(f => <div key={f.id} className="bg-background rounded-xl px-5 py-4 text-[13px] sm:text-sm font-medium text-foreground">{f.question}</div>)}</div>}>
+                <Suspense fallback={<div className="space-y-2">{faqs.map(f => <div key={f.id} className="bg-background border border-border px-5 py-4 text-[13px] sm:text-sm font-medium text-foreground">{f.question}</div>)}</div>}>
                   <LazyAccordion faqs={faqs} />
                 </Suspense>
               </FadeSection>

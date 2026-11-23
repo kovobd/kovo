@@ -122,15 +122,15 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
       <Wrapper>{imgNode}</Wrapper>
 
       {(slide.headline || slide.subheadline || showButtons) && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/65 via-black/20 to-transparent" />
       )}
 
       {(slide.headline || slide.subheadline || (showButtons && (slide.button1_text || slide.button2_text))) && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-full px-6 sm:px-10 max-w-3xl text-center text-white flex flex-col items-center gap-3 sm:gap-4">
+        <div className="absolute inset-0 flex items-end justify-start pointer-events-none pb-16 sm:pb-20 lg:pb-24">
+          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4">
             {slide.headline && (
-              <h2 className="font-display font-medium uppercase leading-[1.05] tracking-[0.04em] text-[28px] sm:text-[44px] lg:text-[60px]"
-                  style={{ fontFamily: '"Archivo Black", system-ui, sans-serif', textShadow: "0 8px 30px rgba(0,0,0,0.4)" }}>
+              <h2 className="font-display font-medium text-white leading-[1.08] tracking-[-0.01em] text-[30px] sm:text-[44px] lg:text-[56px] max-w-[16ch] text-balance"
+                  style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}>
                 {slide.headline}
               </h2>
             )}
@@ -140,7 +140,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
               </p>
             )}
             {showButtons && (slide.button1_text || slide.button2_text) && (
-              <div className="pointer-events-auto mt-3 flex flex-wrap items-center justify-center gap-3">
+              <div className="pointer-events-auto mt-3 flex flex-wrap items-center justify-start gap-3">
                 {slide.button1_text && slide.button1_link && (
                   <Link to={slide.button1_link} className="inline-flex items-center justify-center px-7 py-3 bg-white text-black text-[12px] sm:text-[13px] font-semibold tracking-[0.14em] uppercase rounded-sm hover:bg-white/90 transition-all">
                     {slide.button1_text}
@@ -210,7 +210,7 @@ const SingleSliderCarousel = ({ slides, settings, isMobile }: { slides: HeroSlid
       </div>
 
       {slides.length > 1 && (
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        <div className="absolute bottom-6 right-6 sm:right-10 lg:right-16 flex gap-2 z-10">
           {slides.map((_, i) => (
             <button
               key={i}
@@ -281,7 +281,7 @@ const DualSlider = ({ slides, settings }: { slides: HeroSlide[]; settings: HeroS
       </div>
 
       {pairs.length > 1 && (
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        <div className="absolute bottom-6 right-6 sm:right-10 lg:right-16 flex gap-2 z-10">
           {pairs.map((_, i) => (
             <button
               key={i}
@@ -357,15 +357,15 @@ const VideoHero = ({ settings, isMobile }: { settings: HeroSettings; isMobile: b
       {link ? <Link to={link} className="absolute inset-0 block">{videoNode}</Link> : videoNode}
 
       {(settings.video_headline || settings.video_subheadline || showButtons) && (
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/65 via-black/20 to-transparent" />
       )}
 
       {(settings.video_headline || settings.video_subheadline || showButtons) && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-full px-6 sm:px-10 max-w-3xl text-center text-white flex flex-col items-center gap-3 sm:gap-4">
+        <div className="absolute inset-0 flex items-end justify-start pointer-events-none pb-16 sm:pb-20 lg:pb-24">
+          <div className="w-full px-6 sm:px-10 lg:px-16 max-w-3xl text-left text-white flex flex-col items-start gap-3 sm:gap-4">
             {settings.video_headline && (
-              <h2 className="font-display font-medium uppercase leading-[1.05] tracking-[0.04em] text-[28px] sm:text-[44px] lg:text-[60px]"
-                  style={{ fontFamily: '"Archivo Black", system-ui, sans-serif', textShadow: "0 8px 30px rgba(0,0,0,0.4)" }}>
+              <h2 className="font-display font-medium text-white leading-[1.08] tracking-[-0.01em] text-[30px] sm:text-[44px] lg:text-[56px] max-w-[16ch] text-balance"
+                  style={{ textShadow: "0 2px 24px rgba(0,0,0,0.35)" }}>
                 {settings.video_headline}
               </h2>
             )}
@@ -375,7 +375,7 @@ const VideoHero = ({ settings, isMobile }: { settings: HeroSettings; isMobile: b
               </p>
             )}
             {showButtons && (
-              <div className="pointer-events-auto mt-3 flex flex-wrap items-center justify-center gap-3">
+              <div className="pointer-events-auto mt-3 flex flex-wrap items-center justify-start gap-3">
                 {settings.video_button1_text && settings.video_button1_link && (
                   <Link to={settings.video_button1_link} className="inline-flex items-center justify-center px-7 py-3 bg-white text-black text-[12px] sm:text-[13px] font-semibold tracking-[0.14em] uppercase rounded-sm hover:bg-white/90 transition-all">
                     {settings.video_button1_text}
