@@ -289,9 +289,22 @@ export async function uploadToR2(blob: Blob, opts: R2UploadOptions): Promise<str
 }
 
 
-/** Load an existing R2 image through the admin edge function for canvas-safe re-cropping. */
+/**
+ * Load an existing R2 image for canvas-safe re-cropping. Straight from R2 via
+ * the site's own /__r2/ path (worker/index.ts), so the pixels are same-origin;
+ * through the admin edge function only where that path doesn't exist (e.g. the
+ * Vite dev server or a preview domain without the Worker).
+ */
 export async function loadR2ImageForCrop(ref: string): Promise<string> {
   if (!isR2Ref(ref)) throw new Error("Image is not a Cloudflare R2 reference");
+  const objectKey = ref.startsWith("r2o:") ? ref.slice(4) : `${ref.slice(3)}-original.jpg`;
+  try {
+    const direct = await fetch(`/__r2/${objectKey}`);
+    const type = direct.headers.get("Content-Type") || "";
+    if (direct.ok && type.startsWith("image/")) return URL.createObjectURL(await direct.blob());
+  } catch {
+    /* fall back to the edge function */
+  }
   const { data: res, error } = await supabase.functions.invoke("image-upload", {
     body: { action: "read", ref },
   });

@@ -3,6 +3,7 @@ export interface Env {
   VITE_SUPABASE_URL?: string;
   VITE_SUPABASE_PROJECT_ID?: string;
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
+  VITE_R2_PUBLIC_BASE_URL?: string;
 }
 
 import { renderStorefront, SSR_BUILD_ID } from "../dist-ssr/entry-server.js";
@@ -602,9 +603,36 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   return rewritten;
 }
 
+const R2_PROXY_PREFIX = "/__r2/";
+const DEFAULT_R2_PUBLIC_BASE = "https://images.kovobd.com";
+
+async function proxyR2Image(env: Env, key: string): Promise<Response> {
+  // Image object keys only (as written by the image-upload function).
+  if (!/^[\w-]+(\/[\w-]+)*\.(jpe?g|png|webp|avif|gif)$/i.test(key)) {
+    return new Response("Not found", { status: 404 });
+  }
+  const base = (env.VITE_R2_PUBLIC_BASE_URL || DEFAULT_R2_PUBLIC_BASE).replace(/\/+$/, "");
+  const upstream = await fetch(`${base}/${key}`, { cf: { cacheEverything: true } });
+  if (!upstream.ok) return new Response("Not found", { status: upstream.status === 404 ? 404 : 502 });
+  return new Response(upstream.body, {
+    headers: {
+      "Content-Type": upstream.headers.get("Content-Type") || "application/octet-stream",
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    // An R2 image under this site's own address. The admin's re-crop needs
+    // the photo's pixels, which the browser only allows for same-origin (or
+    // CORS) images, and the R2 public domain sends no CORS headers.
+    if (request.method === "GET" && url.pathname.startsWith(R2_PROXY_PREFIX)) {
+      return proxyR2Image(env, url.pathname.slice(R2_PROXY_PREFIX.length));
+    }
 
     // Admin saves call this so the change shows up on the very next page view.
     if (request.method === "POST" && url.pathname === "/api/public/_refresh") {
