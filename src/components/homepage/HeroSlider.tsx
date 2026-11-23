@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
-import { resolveImageSrc, isR2VariantRef, getR2BaseKey, buildSrcSet, r2Url, isResizableUrl, resizedSrcSet } from "@/lib/cdnImage";
+import { resolveImageSrc, isR2VariantRef, getR2BaseKey, buildSrcSet, r2Url, getR2Base } from "@/lib/cdnImage";
+import { heroImageAttrs, HERO_MOBILE_QUERY } from "@/lib/imageUrls";
 
 export type InteractionMode = "buttons" | "image" | "both";
 
@@ -49,7 +50,7 @@ interface HeroSliderProps {
   loading: boolean;
 }
 
-const MOBILE_QUERY = "(max-width: 767px)";
+const MOBILE_QUERY = HERO_MOBILE_QUERY;
 const useIsMobile = () => {
   // Read the viewport synchronously so phones never start downloading the
   // desktop hero image on the first render.
@@ -103,11 +104,13 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
       </picture>
     );
   } else {
+    // Same attributes the Worker uses to preload the first slide from the HTML.
+    const attrs = heroImageAttrs(slide, isMobile, getR2Base());
     imgNode = (
       <img
-        src={resolveImageSrc(rawSrc, isMobile ? 800 : 1600)}
-        srcSet={isResizableUrl(rawSrc) ? resizedSrcSet(rawSrc, isMobile ? [480, 720, 1080] : [960, 1280, 1600, 1920]) : undefined}
-        sizes={isResizableUrl(rawSrc) ? sizes : undefined}
+        src={attrs?.src ?? resolveImageSrc(rawSrc, isMobile ? 800 : 1600)}
+        srcSet={attrs?.srcSet}
+        sizes={attrs?.srcSet ? attrs.sizes : undefined}
         alt={altText}
         width={isMobile ? 900 : 1600}
         height={isMobile ? 1600 : 900}

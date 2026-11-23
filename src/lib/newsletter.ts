@@ -1,12 +1,15 @@
-import { z } from "zod";
 import { getSupabase } from "@/lib/supabaseLazy";
 
-const emailSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .email({ message: "Please enter a valid email address" })
-  .max(255, { message: "Email is too long" });
+// Plain check instead of zod: this runs on every storefront page, and zod
+// would add ~60 KB to the first download for one email field.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function parseEmail(raw: string): { success: true; data: string } | { success: false; message: string } {
+  const email = String(raw ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return { success: false, message: "Please enter a valid email address" };
+  if (email.length > 255) return { success: false, message: "Email is too long" };
+  return { success: true, data: email };
+}
 
 export interface NewsletterResult {
   ok: boolean;
@@ -22,9 +25,9 @@ export interface NewsletterResult {
  * RLS, validation) surface as failures.
  */
 export async function subscribeToNewsletter(rawEmail: string): Promise<NewsletterResult> {
-  const parsed = emailSchema.safeParse(rawEmail);
-  if (!parsed.success) {
-    return { ok: false, reason: "invalid", message: parsed.error.issues[0]?.message ?? "Invalid email" };
+  const parsed = parseEmail(rawEmail);
+  if ("message" in parsed) {
+    return { ok: false, reason: "invalid", message: parsed.message };
   }
   const email = parsed.data;
   const supabase = await getSupabase();

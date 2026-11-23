@@ -23,3 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 scripts/.r2-migration-state.json
+
+# Wrangler local dev state
+.wrangler/

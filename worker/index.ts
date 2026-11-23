@@ -5,6 +5,8 @@ export interface Env {
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
 }
 
+import { heroImageAttrs, HERO_MOBILE_QUERY } from "../src/lib/imageUrls";
+
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
 const DEFAULT_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co";
 
@@ -119,6 +121,100 @@ async function proxyPublicApi(env: Env, ctx: ExecutionContext, fn: string, url: 
   return clientResponse(fresh, "MISS");
 }
 
+// ── Storefront HTML with its data inlined ──────────────────────────────────
+// Like a server-rendered shop, the page arrives with the data its first
+// screen needs (from the edge cache only, never waiting on Supabase) and a
+// preload for the hero photo, so the browser starts that download at once.
+function routeData(pathname: string): { fn: string; search: string }[] {
+  const out = [{ fn: "public-layout", search: "" }];
+  if (pathname === "/") out.push({ fn: "public-home", search: "" });
+  else if (pathname === "/shop") out.push({ fn: "public-shop", search: "" });
+  else {
+    const m = pathname.match(/^\/product\/([^/]+)\/?$/);
+    if (m) {
+      const q = new URLSearchParams();
+      q.set("slug", decodeURIComponent(m[1]));
+      out.push({ fn: "public-product", search: `?${q.toString()}` });
+    }
+  }
+  return out;
+}
+
+/** Cached JSON text for a public function, or null on a miss (refreshed in the background). */
+async function cachedPublicText(env: Env, ctx: ExecutionContext, origin: string, fn: string, search: string): Promise<string | null> {
+  const cache = caches.default;
+  const cacheKey = new Request(`${origin}/api/public/${fn}${search}`, { method: "GET" });
+  const cached = await cache.match(cacheKey);
+  const refresh = () =>
+    ctx.waitUntil(
+      fetchUpstream(env, fn, search)
+        .then((r) => (r.ok ? storeInCache(cache, cacheKey, r) : undefined))
+        .catch(() => undefined),
+    );
+  if (!cached) { refresh(); return null; }
+  const ageSeconds = (Date.now() - Number(cached.headers.get(STORED_AT) || 0)) / 1000;
+  if (ageSeconds > (EDGE_FRESH_SECONDS[fn] ?? 120)) refresh();
+  return cached.text();
+}
+
+const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+
+function heroPreloads(homeJson: string, layoutJson: string | null): string {
+  try {
+    const slides = JSON.parse(homeJson)?.data?.heroSlides ?? [];
+    const settings = JSON.parse(homeJson)?.data?.heroSettings;
+    if (!slides.length || (settings && settings.enabled === false) || settings?.hero_type === "video_hero") return "";
+    const r2Base = layoutJson ? String(JSON.parse(layoutJson)?.data?.r2PublicBaseUrl || "") : "";
+    const links: string[] = [];
+    for (const [isMobile, media] of [[true, HERO_MOBILE_QUERY], [false, "(min-width: 768px)"]] as const) {
+      const a = heroImageAttrs(slides[0], isMobile, r2Base);
+      if (!a) continue;
+      links.push(
+        `<link rel="preload" as="image" fetchpriority="high" media="${attr(media)}" href="${attr(a.src)}"` +
+          (a.srcSet ? ` imagesrcset="${attr(a.srcSet)}" imagesizes="${attr(a.sizes)}"` : "") + ">",
+      );
+    }
+    return links.join("");
+  } catch {
+    return "";
+  }
+}
+
+/** The SPA shell (dist/app.html). */
+function fetchShell(env: Env, request: Request, url: URL): Promise<Response> {
+  return env.ASSETS.fetch(new Request(`${url.origin}/app.html`, { method: "GET", headers: request.headers }));
+}
+
+async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionContext, url: URL): Promise<Response> {
+  const page = await fetchShell(env, request, url);
+  if (!(page.headers.get("Content-Type") || "").includes("text/html")) return page;
+
+  const entries = routeData(url.pathname);
+  const texts = await Promise.all(entries.map((e) => cachedPublicText(env, ctx, url.origin, e.fn, e.search)));
+  const inline: string[] = [];
+  entries.forEach((e, i) => {
+    // The cached text is JSON; escape "<" so it cannot close the script tag.
+    if (texts[i]) inline.push(`${JSON.stringify(`/api/public/${e.fn}${e.search}`)}:${texts[i]!.replace(/</g, "\\u003c")}`);
+  });
+  const homeIdx = entries.findIndex((e) => e.fn === "public-home");
+  const preload = homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0]) : "";
+  if (!inline.length && !preload) return page;
+
+  const headers = new Headers(page.headers);
+  headers.delete("ETag");
+  headers.delete("Content-Length");
+  headers.set("Cache-Control", "no-cache");
+  const rewritten = new HTMLRewriter()
+    .on("head", {
+      element(el) {
+        if (preload) el.prepend(preload, { html: true });
+        if (inline.length) el.append(`<script>window.__kovoData={${inline.join(",")}}</script>`, { html: true });
+      },
+    })
+    .transform(new Response(page.body, { status: page.status, headers }));
+  return rewritten;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -140,7 +236,24 @@ export default {
       return proxySitemap(env);
     }
 
-    // Everything else: static assets from ./dist with SPA fallback.
+    // Page URLs (no file extension) get the SPA shell. Static files never reach
+    // this point: the asset store answers those before the Worker runs.
+    const isPage = !/\.[a-z0-9]{1,5}$/i.test(url.pathname) || url.pathname.endsWith(".html");
+    if ((request.method === "GET" || request.method === "HEAD") && isPage) {
+      try {
+        if (request.method === "GET" && routeData(url.pathname).length > 1) {
+          return await serveStorefrontHtml(request, env, ctx, url);
+        }
+      } catch {
+        /* fall through to the plain shell */
+      }
+      const shell = await fetchShell(env, request, url);
+      const headers = new Headers(shell.headers);
+      headers.set("Cache-Control", "no-cache");
+      return new Response(request.method === "HEAD" ? null : shell.body, { status: 200, headers });
+    }
+
+    // Missing static file: a real 404 from the asset store.
     return env.ASSETS.fetch(request);
   },
 };

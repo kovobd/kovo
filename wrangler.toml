@@ -6,7 +6,14 @@ workers_dev = true
 [assets]
 directory = "./dist"
 binding = "ASSETS"
-not_found_handling = "single-page-application"
+# The SPA shell ships as app.html (see scripts/prepare-worker-assets.mjs), so
+# page URLs fall through to the Worker, which serves it with data inlined.
+# Unknown files get a real 404 instead of the HTML shell.
+not_found_handling = "none"
+html_handling = "none"
+
+[build]
+command = "node scripts/prepare-worker-assets.mjs"
 
 [vars]
 VITE_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co"
