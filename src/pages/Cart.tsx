@@ -21,8 +21,8 @@ const readShippingCache = (): { defaultShipping: number; freeThreshold: number }
 
 const Cart = () => {
   useDocumentMeta({
-    title: "Your Vault — Gothic Vault",
-    description: "Review the pieces in your vault and continue to checkout. Cash on delivery across Bangladesh.",
+    title: "Your Cart — Kovo",
+    description: "Review the items in your cart and continue to checkout. Cash on delivery across Bangladesh.",
     canonicalPath: "/cart",
     noindex: true,
   });
@@ -100,12 +100,12 @@ const Cart = () => {
     return (
       <div className="section-padding section-spacing text-center">
         <div className="fade-up">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5 ring-1 ring-[#B8935A]/40">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-5 ring-1 ring-border">
             <PackageIcon className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-3">Your vault is empty</h1>
-          <p className="text-sm text-muted-foreground mb-6">The chest awaits its first relic.</p>
-          <Link to="/shop" className="inline-flex items-center justify-center bg-primary text-primary-foreground px-7 py-3 rounded-full text-sm font-semibold hover:bg-primary/90 transition-all duration-200 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-3">Your cart is empty</h1>
+          <p className="text-sm text-muted-foreground mb-6">Add something you love and it will show up here.</p>
+          <Link to="/shop" className="btn-pill">
             Continue Shopping
           </Link>
         </div>
@@ -136,7 +136,7 @@ const Cart = () => {
           <ArrowLeftIcon size={16} /> Continue Shopping
         </Link>
 
-        <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-2">Your Vault</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold text-foreground mb-2">Your Cart</h1>
         <div className="premium-divider max-w-[40px] mb-6" />
 
         {activeOffers.length > 0 && (
@@ -147,7 +147,7 @@ const Cart = () => {
             </div>
             <div className="flex flex-wrap gap-1.5">
               {activeOffers.map((offer) => (
-                <span key={offer.id} className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                <span key={offer.id} className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-0.5 rounded-[2px] shadow-sm">
                   <GiftIcon size={9} />
                   {offer.name}: {toBanglaDigits(offer.discount_value)}{offer.discount_type === "percentage" ? "%" : ` ${CURRENCY_SYMBOL}`} off
                 </span>
@@ -313,7 +313,7 @@ const Cart = () => {
             </div>
             <Link
               to="/checkout"
-              className="w-full bg-primary text-primary-foreground py-3.5 rounded-full text-sm font-semibold hover:bg-primary/90 transition-all duration-200 block text-center shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
+              className="w-full bg-primary text-primary-foreground py-3.5 rounded-[2px] text-sm font-semibold hover:bg-primary/90 transition-all duration-200 block text-center shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
             >
               Proceed to Checkout
             </Link>

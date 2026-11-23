@@ -18,8 +18,8 @@ const statusIcons: Record<string, any> = { pending: ClockIcon, confirmed: CheckC
 
 const TrackOrder = () => {
   useDocumentMeta({
-    title: "Track Your Order — Gothic Vault",
-    description: "Track your Gothic Vault order status in real time using your order number or phone number.",
+    title: "Track Your Order — Kovo",
+    description: "Track your Kovo order status in real time using your order number or phone number.",
     canonicalPath: "/track-order",
   });
   const [searchParams] = useSearchParams();
@@ -91,9 +91,9 @@ const TrackOrder = () => {
     <div className="relative overflow-hidden page-enter bg-background track-order-clean">
       <style>{`
         .track-order-clean .glass-card {
-          background: #17131F !important;
-          border-color: #2B2337 !important;
-          box-shadow: 0 8px 24px -12px rgba(0,0,0,0.55) !important;
+          background: #FFFFFF !important;
+          border-color: hsl(var(--border)) !important;
+          box-shadow: none !important;
           backdrop-filter: none !important;
           -webkit-backdrop-filter: none !important;
         }
@@ -101,8 +101,8 @@ const TrackOrder = () => {
           display: none !important;
         }
         .track-order-clean .glass-card:hover {
-          border-color: #B89AE8 !important;
-          box-shadow: 0 18px 40px -16px rgba(184,154,232,0.35) !important;
+          border-color: hsl(var(--foreground)) !important;
+          box-shadow: none !important;
         }
       `}</style>
       {/* Brand backdrop */}
@@ -137,7 +137,7 @@ const TrackOrder = () => {
                   key={t}
                   type="button"
                   onClick={() => { setSearchType(t); setSearchValue(""); setError(""); setOrder(null); setOrders([]); }}
-                  className={`relative px-5 py-2 rounded-full text-xs font-medium tracking-wide transition-all duration-300 ${
+                  className={`relative px-5 py-2 rounded-[2px] text-xs font-medium tracking-wide transition-all duration-300 ${
                     searchType === t
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -169,7 +169,7 @@ const TrackOrder = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-12 px-7 rounded-full bg-primary text-primary-foreground font-medium tracking-wide hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300"
+                className="h-12 px-7 rounded-[2px] bg-primary text-primary-foreground font-medium tracking-wide hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300"
               >
                 {loading ? "Tracking…" : "Track Order"}
               </Button>

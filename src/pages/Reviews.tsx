@@ -20,6 +20,7 @@ import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
 import { StarIcon, PlayIcon, CheckCircleIcon, ImageIcon, VideoIcon, TypeIcon, SparklesIcon, FilledStarIcon } from "@/components/ui/icons";
 import MediaViewer from "@/components/reviews/MediaViewer";
 import type { ReviewMediaRow, SiteReviewRow } from "@/lib/reviewsApi";
+import { SITE_URL } from "@/config/site";
 
 type Filter = "all" | "photo" | "video" | "text";
 
@@ -242,16 +243,16 @@ const FILTERS: { id: Filter; label: string; Icon: any }[] = [
 
 const Reviews = () => {
   useDocumentMeta({
-    title: "Customer Reviews — Gothic Vault",
-    description: "Real reviews from Gothic Vault customers — photos, videos, and 5-star stories of our mobile accessories.",
+    title: "Customer Reviews — Kovo",
+    description: "Real reviews from Kovo customers, with photos and videos.",
     canonicalPath: "/reviews",
   });
   useJsonLd("ld-reviews-breadcrumb", {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://gothicvault.shop/" },
-      { "@type": "ListItem", position: 2, name: "Reviews", item: "https://gothicvault.shop/reviews" },
+      { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Reviews", item: `${SITE_URL}/reviews` },
     ],
   });
 
@@ -353,7 +354,7 @@ const Reviews = () => {
                   key={id}
                   type="button"
                   onClick={() => setFilter(id)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 h-9 rounded-full text-[12.5px] font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 sm:px-4 h-9 rounded-[2px] text-[12.5px] font-medium transition-all duration-200 ${
                     active
                       ? "bg-foreground text-background shadow-sm"
                       : "text-muted-foreground hover:text-foreground"

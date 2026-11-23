@@ -3,7 +3,7 @@ import { XIcon } from "@/components/ui/icons";
 import { useLayoutData } from "./LayoutDataProvider";
 
 const DISMISS_KEY = "announcement_dismissed";
-const BAR_HEIGHT_CLASS = "h-9";
+const BAR_HEIGHT_CLASS = "h-8";
 const HAS_BAR_HINT_KEY = "announcement_bar_hint";
 
 const getDismissedState = () => {
@@ -53,7 +53,7 @@ const AnnouncementBar = () => {
   const handleDismiss = () => { setDismissed(true); setDismissedState(); };
 
   const renderSegment = (a: typeof list[0], i: number) => {
-    const textBase = "text-[13px] leading-none font-medium tracking-[0.14em] mx-10 whitespace-nowrap inline-block";
+    const textBase = "text-[11px] leading-none font-medium uppercase tracking-[0.18em] mx-10 whitespace-nowrap inline-block";
     const inner = (
       <span className={a.link ? `${textBase} underline underline-offset-4 decoration-current` : textBase}>
         {a.text}
@@ -77,14 +77,13 @@ const AnnouncementBar = () => {
 
   return (
     <div
-      className={`relative z-[60] flex ${BAR_HEIGHT_CLASS} items-center overflow-hidden border-b border-border/40 bg-primary-foreground text-primary`}
+      className={`relative z-[60] flex ${BAR_HEIGHT_CLASS} items-center overflow-hidden bg-foreground text-background`}
     >
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-foreground/5" />
       <div className="block w-full">{Track}</div>
       {dismissible && (
         <button
           onClick={handleDismiss}
-          className="absolute right-2 sm:right-3 p-1 rounded-full hover:bg-foreground/10 transition-colors duration-200 z-10 opacity-70 hover:opacity-100"
+          className="absolute right-2 sm:right-3 p-1 rounded-full hover:bg-background/15 transition-colors duration-200 z-10 opacity-70 hover:opacity-100"
           aria-label="Dismiss"
         >
           <XIcon size={12} />

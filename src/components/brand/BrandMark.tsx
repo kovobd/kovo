@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import logoUrl from "@/assets/gothic-vault-logo.png";
 
 interface BrandMarkProps {
   className?: string;
@@ -7,45 +6,31 @@ interface BrandMarkProps {
   invert?: boolean;
 }
 
-/**
- * Size classes are tuned so the mark always fits inside the header row:
- *  - Desktop header is 80px (h-20)  → lg mark = 72px (≈90%)
- *  - Mobile  header is 64px (h-16)  → md mark = 56px (≈88%)
- * Height-only classes + `w-auto` + `object-contain` keep the aspect ratio
- * intact and prevent any vertical overflow of the header bar.
- */
+/** Text sizes tuned to sit inside the header row (64px mobile, 80px desktop). */
 const sizeMap = {
-  sm: "h-12",           // 48px
-  md: "h-[68px]",       // 68px — mobile header (+20%)
-  lg: "h-[88px]",       // 88px — desktop header (+20%)
-  xl: "h-28",           // 112px — hero / footer accents
+  sm: "text-[18px]",
+  md: "text-[22px]",
+  lg: "text-[26px]",
+  xl: "text-[34px]",
 };
 
 /**
- * Gothic Vault brand mark.
- *
- * The logo is imported as a module so Vite emits a fingerprinted asset
- * in `dist/assets/` at build time. This makes the reference deployment-safe
- * on any static host (Cloudflare Workers/Pages, Netlify, Vercel, S3, …) —
- * no reliance on Lovable's `/__l5e/` asset proxy which only exists inside
- * the Lovable preview/publish infrastructure.
+ * Kovo wordmark. Set in type rather than an image so it stays crisp at any
+ * size and needs no asset request.
  */
 const BrandMark = ({ className, size = "md", invert = false }: BrandMarkProps) => (
-  <img
-    src={logoUrl}
-    alt="Gothic Vault Logo"
-    width={1000}
-    height={1000}
-    loading="eager"
-    decoding="async"
+  <span
+    role="img"
+    aria-label="Kovo"
     className={cn(
-      "w-auto max-h-full select-none object-contain",
+      "inline-block select-none font-display font-medium uppercase leading-none tracking-[0.32em] -mr-[0.32em]",
+      invert ? "text-background" : "text-foreground",
       sizeMap[size],
-      invert && "brightness-0 invert",
       className,
     )}
-    draggable={false}
-  />
+  >
+    Kovo
+  </span>
 );
 
 export default BrandMark;

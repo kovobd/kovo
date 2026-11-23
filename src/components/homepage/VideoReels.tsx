@@ -734,7 +734,7 @@ const ReelModal: React.FC<{
 const ProductCard: React.FC<{ reel: VideoReel; onClose: () => void }> = ({ reel, onClose }) => {
   if (!reel.product) return null;
   return (
-    <div className="flex items-center gap-3 bg-[hsl(var(--surface))]/95 border border-[#2B2337] backdrop-blur rounded-2xl p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
+    <div className="flex items-center gap-3 bg-[hsl(var(--surface))]/95 border border-border backdrop-blur rounded-2xl p-2.5 ">
       {reel.product.image && (
         <img
           src={resolveImageSrc(reel.product.image, 400)}
@@ -754,7 +754,7 @@ const ProductCard: React.FC<{ reel: VideoReel; onClose: () => void }> = ({ reel,
         <Link
           to={`/product/${reel.product.slug}`}
           onClick={onClose}
-          className="shrink-0 inline-flex items-center justify-center px-4 h-9 rounded-full bg-[#B89AE8] text-[#050505] text-[11.5px] font-semibold hover:bg-[#CDB5F6] transition"
+          className="shrink-0 inline-flex items-center justify-center px-4 h-9 rounded-[2px] bg-foreground text-background text-[11.5px] font-semibold hover:bg-foreground/85 transition"
         >
           {reel.cta_text || "Shop Now"}
         </Link>

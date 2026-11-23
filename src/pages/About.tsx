@@ -6,25 +6,25 @@ import { supabase } from "@/integrations/supabase/client";
 import DynamicIcon from "@/components/ui/DynamicIcon";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
 import { AboutPageSkeleton } from "@/components/ui/page-skeletons";
+import { SITE_URL } from "@/config/site";
 const heroBg = "/hero-bg.jpg";
 
 interface Section { id: string; enabled: boolean; sort_order: number; content: any; }
 
-const SITE_URL = "https://gothicvault.shop";
 
 const About = () => {
   useDocumentMeta({
-    title: "About Gothic Vault | Premium Mobile Accessories",
-    description: "Meet Gothic Vault — crafters of premium mobile accessories inspired by iconic scents. Skin-friendly, long-lasting, made for everyday elegance.",
+    title: "About Kovo",
+    description: "Meet Kovo, an online store in Bangladesh with cash on delivery across the country.",
     canonicalPath: "/about",
   });
   useJsonLd("ld-about", {
     "@context": "https://schema.org",
     "@type": "AboutPage",
-    name: "About Gothic Vault",
+    name: "About Kovo",
     url: `${SITE_URL}/about`,
-    description: "Gothic Vault crafts premium mobile accessories inspired by iconic scents.",
-    mainEntity: { "@type": "Organization", name: "Gothic Vault", url: SITE_URL },
+    description: "Kovo is an online store in Bangladesh with cash on delivery across the country.",
+    mainEntity: { "@type": "Organization", name: "Kovo", url: SITE_URL },
   });
   useJsonLd("ld-about-breadcrumb", {
     "@context": "https://schema.org",
@@ -154,7 +154,7 @@ const About = () => {
         <ScrollScene variant="cinematic" intensity={0.8}><section className="section-padding section-spacing text-center">
           <div className="fade-up">
             <h2 className="apple-heading-md text-foreground mb-6">{cta.text || "Find your perfect piece"}</h2>
-            <Link to={cta.button_link || "/shop"} className="inline-flex items-center justify-center bg-primary text-primary-foreground px-10 py-4 rounded-full text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150 shadow-[0_4px_20px_-6px_hsl(var(--primary)/0.4)]">
+            <Link to={cta.button_link || "/shop"} className="inline-flex items-center justify-center bg-primary text-primary-foreground px-10 py-4 rounded-[2px] text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150 shadow-[0_4px_20px_-6px_hsl(var(--primary)/0.4)]">
               {cta.button_text || "Shop now"}
             </Link>
           </div>

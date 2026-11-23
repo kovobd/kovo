@@ -16,6 +16,7 @@ import type { Product, Category } from "@/types/database";
 import { ShopPageSkeleton } from "@/components/ui/page-skeletons";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
 import { ScrollScene } from "@/components/ui/scroll-scene";
+import { SITE_URL } from "@/config/site";
 
 type Availability = "all" | "in" | "out";
 
@@ -191,17 +192,17 @@ const Shop = () => {
   }, [category, categories]);
 
   const seoTitle = activeCategory
-    ? ((activeCategory as any).meta_title || `${(activeCategory as any).name} — Gothic Vault`)
-    : "Shop — Gothic Vault";
+    ? ((activeCategory as any).meta_title || `${(activeCategory as any).name} — Kovo`)
+    : "Shop — Kovo";
   const seoDescription = activeCategory
     ? ((activeCategory as any).meta_description
-        || `Browse ${(activeCategory as any).name} from Gothic Vault — premium mobile accessories inspired by iconic scents.`)
-    : "Browse our collection of premium mobile accessories — long-lasting, skin-friendly, and easy to carry everywhere.";
+        || `Browse ${(activeCategory as any).name} from Kovo. Cash on delivery across Bangladesh.`)
+    : "Browse the full Kovo collection. Cash on delivery across Bangladesh.";
   const seoImage = activeCategory
     ? ((activeCategory as any).featured_image_url || (activeCategory as any).image_url || undefined)
     : undefined;
   const absoluteSeoImage = seoImage
-    ? (seoImage.startsWith("http") ? seoImage : `https://gothicvault.shop${seoImage.startsWith("/") ? "" : "/"}${seoImage}`)
+    ? (seoImage.startsWith("http") ? seoImage : `${SITE_URL}${seoImage.startsWith("/") ? "" : "/"}${seoImage}`)
     : undefined;
   const canonicalPath = activeCategory
     ? `/shop?category=${encodeURIComponent((activeCategory as any).slug || (activeCategory as any).name)}`
@@ -219,24 +220,24 @@ const Shop = () => {
     "@type": "CollectionPage",
     name: (activeCategory as any).name,
     description: String(seoDescription).slice(0, 200),
-    url: `https://gothicvault.shop${canonicalPath}`,
+    url: `${SITE_URL}${canonicalPath}`,
   } : {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     name: "Shop",
-    url: "https://gothicvault.shop/shop",
+    url: `${SITE_URL}/shop`,
   });
 
   useJsonLd("ld-breadcrumb-shop", {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://gothicvault.shop/" },
-      { "@type": "ListItem", position: 2, name: "Shop", item: "https://gothicvault.shop/shop" },
+      { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Shop", item: `${SITE_URL}/shop` },
       ...(activeCategory ? [{
         "@type": "ListItem", position: 3,
         name: (activeCategory as any).name,
-        item: `https://gothicvault.shop${canonicalPath}`,
+        item: `${SITE_URL}${canonicalPath}`,
       }] : []),
     ],
   });

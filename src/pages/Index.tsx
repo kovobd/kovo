@@ -12,7 +12,6 @@ import StarRating from "@/components/ui/StarRating";
 import { SparklesIcon, GiftIcon, ArrowRightIcon } from "@/components/ui/icons";
 import DynamicIcon from "@/components/ui/DynamicIcon";
 import HeroSlider from "@/components/homepage/HeroSlider";
-import HeroParticles from "@/components/ui/HeroParticles";
 import FeaturedCategories, { type FeaturedCategory } from "@/components/homepage/FeaturedCategories";
 import type { Product, HomepageSection, Testimonial, HomeFaq, WhyChooseUsCard } from "@/types/database";
 const VideoReels = lazy(() => import("@/components/homepage/VideoReels"));
@@ -161,8 +160,8 @@ const Index = () => {
   const brandSection = getContent("brands_showcase");
 
   useDocumentMeta({
-    title: "Gothic Vault | Premium Mobile Accessories",
-    description: "Premium mobile accessories including earbuds, smartwatches, chargers, power banks, cables, speakers, phone cases and more.",
+    title: "Kovo | Shop Online in Bangladesh",
+    description: "Kovo — shop online in Bangladesh. Cash on delivery across the country.",
     canonicalPath: "/",
   });
 
@@ -173,7 +172,7 @@ const Index = () => {
   return (
     <div style={{ minHeight: '100vh' }} className="contain-content">
       {/* Visually hidden H1 for SEO/A11y — describes the site without altering the hero design */}
-      <h1 className="sr-only">Gothic Vault — Premium Mobile Accessories</h1>
+      <h1 className="sr-only">Kovo — Shop Online in Bangladesh</h1>
       {heroEnabled && (
         <div className="relative" data-gv-hero>
           <HeroSlider
@@ -181,7 +180,6 @@ const Index = () => {
             settings={heroSettings}
             loading={isLoading}
           />
-          <HeroParticles />
         </div>
       )}
 
@@ -219,7 +217,7 @@ const Index = () => {
           {activeOffers.length > 0 && (
             <section className="py-6 sm:py-8 section-padding">
               <FadeSection className="text-center mb-4 sm:mb-5">
-                <div className="inline-flex items-center gap-2 bg-foreground text-background px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-2.5">
+                <div className="inline-flex items-center gap-2 bg-foreground text-background px-3.5 py-1.5 rounded-[2px] text-[10px] font-bold uppercase tracking-widest mb-2.5">
                   <SparklesIcon size={12} /> Limited time offer
                 </div>
                 <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold tracking-tight text-foreground">Don't miss out!</h2>
@@ -230,7 +228,7 @@ const Index = () => {
                     <DeepTilt key={offer.id} intensity={12}>
                     <Link to="/shop" className="group relative overflow-hidden glass-card rounded-xl p-4 sm:p-5 hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 trust-badge block h-full" style={{ transformStyle: "preserve-3d" }}>
                       <div className="flex items-center gap-2.5 mb-2" style={{ transform: "translateZ(30px)" }}>
-                        <span className="inline-flex items-center gap-1 bg-foreground text-background text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                        <span className="inline-flex items-center gap-1 bg-foreground text-background text-[11px] font-bold px-2.5 py-1 rounded-[2px] shadow-sm">
                           <GiftIcon size={11} />
                           {toBanglaDigits(offer.discount_value)}{offer.discount_type === "percentage" ? "%" : ` ${CURRENCY_SYMBOL}`} off
                         </span>
@@ -454,7 +452,7 @@ const Index = () => {
             <TestimonialsSection
               testimonials={fromDbTestimonials(testimonials)}
               title={sectionContent("testimonials").section_title || "What our customers say"}
-              subtitle={sectionContent("testimonials").subtitle || "Real stories from people who carry Gothic Vault every day."}
+              subtitle={sectionContent("testimonials").subtitle || "Real stories from Kovo customers."}
             />
           )}
 

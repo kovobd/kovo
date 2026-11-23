@@ -70,7 +70,7 @@ export const OrderTrackingParallaxCard = React.forwardRef<
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-[0.42em] text-muted-foreground font-display mb-2">
-                The Vault · In Transit
+                Kovo · In Transit
               </div>
               <h3 className="text-2xl sm:text-[28px] font-semibold tracking-[-0.025em] text-foreground leading-tight truncate">
                 {product}

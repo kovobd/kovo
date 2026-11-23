@@ -38,6 +38,7 @@ import { getProductVersion } from "@/lib/productVersion";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
 
 import ProductEntrance from "@/components/ambient/pixelFx/ProductEntrance";
+import { SITE_URL } from "@/config/site";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -86,17 +87,17 @@ const ProductDetails = () => {
   const brandNameForMeta = (data as any)?.brandName as string | undefined;
   const primaryImage = (product?.images?.find((s: string) => typeof s === "string" && s.trim().length > 0)) ?? undefined;
   const absoluteImage = primaryImage
-    ? (primaryImage.startsWith("http") ? primaryImage : `https://gothicvault.shop${primaryImage.startsWith("/") ? "" : "/"}${primaryImage}`)
+    ? (primaryImage.startsWith("http") ? primaryImage : `${SITE_URL}${primaryImage.startsWith("/") ? "" : "/"}${primaryImage}`)
     : undefined;
   const cleanDescription = product
-    ? (product.short_description || product.description || `${product.name} — mobile accessories from Gothic Vault.`)
+    ? (product.short_description || product.description || `${product.name} — from Kovo.`)
         .replace(/<[^>]+>/g, "")
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 160)
-    : "Discover premium mobile accessories at Gothic Vault";
+    : "Shop Kovo online. Cash on delivery across Bangladesh.";
   useDocumentMeta({
-    title: product?.name ? `${product.name} — Gothic Vault` : "Product — Gothic Vault",
+    title: product?.name ? `${product.name} — Kovo` : "Product — Kovo",
     description: cleanDescription,
     canonicalPath: id ? `/product/${id}` : "/shop",
     image: absoluteImage,
@@ -115,7 +116,7 @@ const ProductDetails = () => {
           description: cleanDescription,
           sku: (product as any).sku || undefined,
           image: absoluteImage ? [absoluteImage] : undefined,
-          url: `https://gothicvault.shop/product/${(product as any).slug || product.id}`,
+          url: `${SITE_URL}/product/${(product as any).slug || product.id}`,
           brand: brandNameForMeta ? { "@type": "Brand", name: brandNameForMeta } : undefined,
           category: categoryNameForTrack || undefined,
           offers: price != null ? {
@@ -123,7 +124,7 @@ const ProductDetails = () => {
             price: Number(price).toFixed(2),
             priceCurrency: "BDT",
             availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-            url: `https://gothicvault.shop/product/${(product as any).slug || product.id}`,
+            url: `${SITE_URL}/product/${(product as any).slug || product.id}`,
           } : undefined,
         };
         const rating = (product as any).rating as number | undefined;
@@ -148,12 +149,12 @@ const ProductDetails = () => {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: "https://gothicvault.shop/" },
-          { "@type": "ListItem", position: 2, name: "Shop", item: "https://gothicvault.shop/shop" },
+          { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+          { "@type": "ListItem", position: 2, name: "Shop", item: `${SITE_URL}/shop` },
           ...(categoryNameForTrack
-            ? [{ "@type": "ListItem", position: 3, name: categoryNameForTrack, item: `https://gothicvault.shop/shop?category=${encodeURIComponent(categoryNameForTrack)}` }]
+            ? [{ "@type": "ListItem", position: 3, name: categoryNameForTrack, item: `${SITE_URL}/shop?category=${encodeURIComponent(categoryNameForTrack)}` }]
             : []),
-          { "@type": "ListItem", position: categoryNameForTrack ? 4 : 3, name: product.name, item: `https://gothicvault.shop/product/${(product as any).slug || product.id}` },
+          { "@type": "ListItem", position: categoryNameForTrack ? 4 : 3, name: product.name, item: `${SITE_URL}/product/${(product as any).slug || product.id}` },
         ],
       }
     : null;
@@ -549,10 +550,10 @@ const ProductDetails = () => {
               {((product as any).is_new_arrival || (product as any).best_seller) && (
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {(product as any).best_seller && (
-                    <span className="inline-flex items-center bg-[#B89AE8] text-[#050505] text-[10px] font-semibold tracking-[0.14em] uppercase px-2.5 py-1 rounded-md">Best Seller</span>
+                    <span className="inline-flex items-center bg-foreground text-background text-[10px] font-semibold tracking-[0.14em] uppercase px-2.5 py-1 ">Best seller</span>
                   )}
                   {(product as any).is_new_arrival && (
-                    <span className="inline-flex items-center border border-[#B89AE8]/60 bg-card/90 text-[#CDB5F6] text-[10px] font-semibold tracking-[0.18em] uppercase px-2.5 py-1 rounded-md">New Arrival</span>
+                    <span className="inline-flex items-center border border-foreground bg-background text-foreground text-[10px] font-semibold tracking-[0.18em] uppercase px-2.5 py-1 ">New arrival</span>
                   )}
                 </div>
               )}
@@ -1166,14 +1167,14 @@ const ProductDetails = () => {
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock || hasUnselectedVariants}
-              className="h-8 px-3 inline-flex items-center justify-center gap-1.5 border border-foreground/80 text-foreground rounded-full text-[11px] font-medium tracking-[0.04em] uppercase hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 px-3 inline-flex items-center justify-center gap-1.5 border border-foreground/80 text-foreground rounded-[2px] text-[11px] font-medium tracking-[0.04em] uppercase hover:bg-foreground hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShoppingBagIcon size={12} /> Add to cart
             </button>
             <button
               onClick={handleBuyNow}
               disabled={isOutOfStock || hasUnselectedVariants}
-              className="h-8 px-4 inline-flex items-center justify-center bg-primary text-primary-foreground rounded-full text-[11px] font-semibold tracking-[0.06em] uppercase hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 px-4 inline-flex items-center justify-center bg-primary text-primary-foreground rounded-[2px] text-[11px] font-semibold tracking-[0.06em] uppercase hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isOutOfStock ? "Sold out" : "Buy now"}
             </button>

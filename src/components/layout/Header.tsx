@@ -264,14 +264,13 @@ const Header = () => {
       <header
         className={`sticky top-0 left-0 right-0 z-[70] text-foreground border-b transition-[background-color,border-color,backdrop-filter,box-shadow] duration-300 ${
           scrolled
-            ? "bg-[rgba(5,5,5,0.88)] border-[#2B2337] shadow-[0_8px_32px_-16px_rgba(0,0,0,0.7)]"
-            : "bg-[rgba(5,5,5,0.75)] border-[#2B2337]/70"
+            ? "bg-background/95 border-border"
+            : "bg-background border-border"
         }`}
-        style={{ backdropFilter: "blur(16px) saturate(160%)", WebkitBackdropFilter: "blur(16px) saturate(160%)" }}
       >
         <div className="relative">
           {/* Desktop */}
-          <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center px-8 xl:px-12 h-24">
+          <div className="hidden lg:grid grid-cols-[1fr_auto_1fr] items-center px-8 xl:px-12 h-20">
 
             <nav className="flex items-center gap-9">
               {navLinks.slice(0, 5).map((link) => (
@@ -281,8 +280,8 @@ const Header = () => {
                   onMouseEnter={() => prefetchRoute(link.to)}
                   onFocus={() => prefetchRoute(link.to)}
                   onTouchStart={() => prefetchRoute(link.to)}
-                  className={`text-[14px] font-medium tracking-[0.01em] transition-colors ${
-                    isActive(link.to) ? "text-foreground" : "text-foreground/75 hover:text-foreground"
+                  className={`relative py-1 text-[12px] font-medium uppercase tracking-[0.14em] transition-colors after:absolute after:left-0 after:-bottom-0.5 after:h-px after:bg-foreground after:transition-[width] after:duration-300 ${
+                    isActive(link.to) ? "text-foreground after:w-full" : "text-foreground/70 hover:text-foreground after:w-0 hover:after:w-full"
                   }`}
                 >
                   {link.label}
@@ -309,7 +308,7 @@ const Header = () => {
               <Link to="/cart" className={`${iconBtn} relative`} aria-label="Cart" data-pixelfx-target="cart">
                 <ShoppingBagIcon className="w-[20px] h-[20px]" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-[#7A0F1E] text-[#F7F4FF] text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center tabular-nums shadow-[0_0_0_1px_#3A0710,0_2px_6px_-1px_rgba(122,15,30,0.7)] ring-1 ring-[#B8935A]/40">
+                  <span className="absolute -top-0.5 -right-0.5 bg-foreground text-background text-[10px] font-semibold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center tabular-nums">
                     {totalItems}
                   </span>
                 )}
@@ -318,7 +317,7 @@ const Header = () => {
           </div>
 
           {/* Mobile + Tablet */}
-          <div className="flex lg:hidden items-center justify-between px-4 h-20">
+          <div className="flex lg:hidden items-center justify-between px-4 h-16">
 
             <button
               onClick={() => setMobileOpen((v) => !v)}
@@ -347,7 +346,7 @@ const Header = () => {
               <Link to="/cart" className="relative p-2 -mr-2 text-foreground/85 hover:text-foreground transition-colors" aria-label="Cart" data-pixelfx-target="cart">
                 <ShoppingBagIcon className="w-[22px] h-[22px]" />
                 {totalItems > 0 && (
-                  <span className="absolute top-0 right-0 bg-[#7A0F1E] text-[#F7F4FF] text-[10px] font-bold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center tabular-nums shadow-[0_0_0_1px_#3A0710,0_2px_6px_-1px_rgba(122,15,30,0.7)] ring-1 ring-[#B8935A]/40">
+                  <span className="absolute top-0 right-0 bg-foreground text-background text-[10px] font-semibold min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center tabular-nums">
                     {totalItems}
                   </span>
                 )}
@@ -380,7 +379,7 @@ const Header = () => {
             if (deltaY > 60) setMobileOpen(false);
             touchStartY.current = null;
           }}
-          className={`absolute left-0 right-0 bottom-0 max-h-[88vh] flex flex-col rounded-t-[28px] border-t border-x border-[#2B2337] bg-[hsl(var(--surface))] text-foreground backdrop-blur-2xl shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.7)] transition-all duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`absolute left-0 right-0 bottom-0 max-h-[88vh] flex flex-col rounded-t-[28px] border-t border-x border-border bg-[hsl(var(--surface))] text-foreground backdrop-blur-2xl shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.7)] transition-all duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             mobileOpen ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
           }`}
           role="dialog"
@@ -399,8 +398,8 @@ const Header = () => {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search the Vault..."
-                className="w-full h-11 pl-10 pr-3 rounded-[14px] bg-[#17131F] border border-[#2B2337] text-[13px] text-foreground placeholder:text-foreground/45 outline-none focus:border-[#B89AE8] focus:ring-2 focus:ring-[#B89AE8]/30 transition-colors"
+                placeholder="Search products..."
+                className="w-full h-11 pl-10 pr-3 rounded-[14px] bg-secondary border border-border text-[13px] text-foreground placeholder:text-foreground/45 outline-none focus:border-foreground focus:ring-2 focus:ring-foreground/10 transition-colors"
               />
             </form>
           </div>
@@ -427,7 +426,7 @@ const Header = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-semibold text-foreground leading-tight">All Collections</div>
-                <div className="text-[11px] text-foreground/55 mt-0.5 leading-tight">Explore the Vault</div>
+                <div className="text-[11px] text-foreground/55 mt-0.5 leading-tight">Browse everything</div>
 
               </div>
               <ArrowRightIcon className="w-3.5 h-3.5 text-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all duration-200" />
@@ -537,11 +536,11 @@ const Header = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder="Search the Vault..."
+               placeholder="Search products..."
                 aria-label="Search products"
                 aria-autocomplete="list"
                 aria-controls="header-search-suggestions"
-                className="w-full h-14 sm:h-16 pl-14 pr-14 rounded-[14px] sm:rounded-[18px] bg-[#17131F] text-foreground border border-[#2B2337] text-base sm:text-lg placeholder:text-foreground/45 outline-none focus:border-[#B89AE8] focus:ring-2 focus:ring-[#B89AE8]/30 shadow-2xl transition-all"
+                className="w-full h-14 sm:h-16 pl-14 pr-14 rounded-[14px] sm:rounded-[18px] bg-secondary text-foreground border border-border text-base sm:text-lg placeholder:text-foreground/45 outline-none focus:border-foreground focus:ring-2 focus:ring-foreground/10 shadow-2xl transition-all"
               />
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center">
                 <button
@@ -560,7 +559,7 @@ const Header = () => {
             {searchQuery.trim() ? (
               <div
                 id="header-search-suggestions"
-                className="mt-3 rounded-2xl bg-[hsl(var(--surface))]/95 border border-[#2B2337] backdrop-blur-xl overflow-hidden shadow-2xl"
+                className="mt-3 rounded-2xl bg-[hsl(var(--surface))]/95 border border-border backdrop-blur-xl overflow-hidden shadow-2xl"
                 role="listbox"
               >
                 {suggestions.length > 0 ? (

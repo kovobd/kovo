@@ -17,9 +17,9 @@ export default {
         xs: "375px",
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', '"Segoe UI"', 'system-ui', 'sans-serif'],
-        display: ['Cinzel', '"Cormorant Garamond"', 'Georgia', 'serif'],
-        serif: ['"Cormorant Garamond"', 'Cinzel', 'Georgia', 'serif'],
+        sans: ['Inter', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        display: ['Jost', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['Jost', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",

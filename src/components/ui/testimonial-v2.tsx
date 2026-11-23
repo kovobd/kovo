@@ -19,7 +19,7 @@ const TestimonialsSection = ({
   testimonials,
   badge = "Testimonials",
   title = "What our customers say",
-  subtitle = "Real stories from people who carry Gothic Vault every day.",
+  subtitle = "Real stories from Kovo customers.",
 }: TestimonialsSectionProps) => {
   if (!testimonials.length) return null;
 

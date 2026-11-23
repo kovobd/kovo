@@ -1,6 +1,6 @@
 import { CURRENCY_SYMBOL } from "@/lib/currency";
 import { supabase } from "@/integrations/supabase/client";
-import logoUrl from "@/assets/gothic-vault-logo.png";
+import logoUrl from "@/assets/kovo-logo.png";
 import { resolveImageSrc } from "@/lib/cdnImage";
 
 interface InvoiceData {
@@ -25,7 +25,7 @@ const esc = (v: unknown) =>
  * Turn any logo reference (R2 marker, absolute URL, relative asset path)
  * into a base64 data URL so it survives being written into a popup document
  * and is guaranteed to be decoded before print(). Falls back to the bundled
- * Gothic Vault mark whenever the configured logo can't be fetched.
+ * Kovo wordmark whenever the configured logo can't be fetched.
  */
 async function toDataUrl(src: string): Promise<string | null> {
   try {
@@ -59,7 +59,7 @@ async function resolveLogoDataUrl(configured?: string | null): Promise<string> {
 const money = (n: unknown) => `${CURRENCY_SYMBOL}${Math.round(Number(n) || 0).toLocaleString("en-US")}`;
 
 /**
- * Gothic Vault invoice.
+ * Kovo invoice.
  *
  * Print-friendly by design: parchment-white paper, ink-black type, deep-violet
  * brand accents, Cinzel display headings + Inter body. Colour is limited to
@@ -68,12 +68,12 @@ const money = (n: unknown) => `${CURRENCY_SYMBOL}${Math.round(Number(n) || 0).to
 const generateInvoiceHTML = (data: InvoiceData, format: "a4" | "receipt" = "a4"): string => {
   const {
     order,
-    storeName = "Gothic Vault",
+    storeName = "Kovo",
     storeAddress = "",
     storePhone = "",
     storeEmail = "",
     logoUrl: logo,
-    footerText = "Thank you for entering the Vault.",
+    footerText = "Thank you for shopping with Kovo.",
     signatureLabel = "",
     termsText = "",
   } = data;

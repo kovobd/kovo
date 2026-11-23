@@ -72,7 +72,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
   const imageIsLink = (mode === "image" || mode === "both") && !!slide.image_click_link;
 
   const altText = [slide.headline, slide.subheadline].filter(Boolean).join(" — ")
-    || "Gothic Vault mobile accessories collection";
+    || "Kovo collection";
 
   // Responsive sizes: full-viewport hero. Mobile ~100vw at portrait aspect,
   // desktop ~100vw capped by the 16:9 hero frame.
@@ -129,7 +129,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-full px-6 sm:px-10 max-w-3xl text-center text-white flex flex-col items-center gap-3 sm:gap-4">
             {slide.headline && (
-              <h2 className="font-display font-bold uppercase leading-[1.05] tracking-tight text-[28px] sm:text-[44px] lg:text-[60px]"
+              <h2 className="font-display font-medium uppercase leading-[1.05] tracking-[0.04em] text-[28px] sm:text-[44px] lg:text-[60px]"
                   style={{ fontFamily: '"Archivo Black", system-ui, sans-serif', textShadow: "0 8px 30px rgba(0,0,0,0.4)" }}>
                 {slide.headline}
               </h2>
@@ -364,7 +364,7 @@ const VideoHero = ({ settings, isMobile }: { settings: HeroSettings; isMobile: b
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-full px-6 sm:px-10 max-w-3xl text-center text-white flex flex-col items-center gap-3 sm:gap-4">
             {settings.video_headline && (
-              <h2 className="font-display font-bold uppercase leading-[1.05] tracking-tight text-[28px] sm:text-[44px] lg:text-[60px]"
+              <h2 className="font-display font-medium uppercase leading-[1.05] tracking-[0.04em] text-[28px] sm:text-[44px] lg:text-[60px]"
                   style={{ fontFamily: '"Archivo Black", system-ui, sans-serif', textShadow: "0 8px 30px rgba(0,0,0,0.4)" }}>
                 {settings.video_headline}
               </h2>

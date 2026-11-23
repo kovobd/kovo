@@ -25,7 +25,7 @@ import { useCartProductMeta } from "@/hooks/useCartProductMeta";
 
 const Checkout = () => {
   useDocumentMeta({
-    title: "Checkout — Gothic Vault",
+    title: "Checkout — Kovo",
     description: "Securely complete your order with cash on delivery or other payment options. Fast delivery across Bangladesh.",
     canonicalPath: "/checkout",
     noindex: true,
@@ -284,7 +284,7 @@ const Checkout = () => {
     return (
       <div className="section-padding section-spacing text-center">
         <h1 className="apple-heading-md text-foreground mb-4">Nothing to checkout</h1>
-        <Link to="/shop" className="inline-flex items-center justify-center bg-foreground text-background px-8 py-4 rounded-full text-sm font-medium hover:bg-foreground/90 transition-colors">
+        <Link to="/shop" className="inline-flex items-center justify-center bg-foreground text-background px-8 py-4 rounded-[2px] text-sm font-medium hover:bg-foreground/90 transition-colors">
           Continue Shopping
         </Link>
       </div>
@@ -722,7 +722,7 @@ const Checkout = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-primary text-primary-foreground py-4 rounded-full text-sm font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
+              className="w-full bg-primary text-primary-foreground py-4 rounded-[2px] text-sm font-semibold hover:bg-primary/90 transition-all duration-200 disabled:opacity-50 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
             >
               {submitting ? "Placing order…" : "Place Order"}
             </button>

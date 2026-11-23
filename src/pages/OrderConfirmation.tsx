@@ -32,8 +32,8 @@ const OrderConfirmation = () => {
   const [verified, setVerified] = useState<"pending" | "ok" | "blocked">("pending");
 
   useDocumentMeta({
-    title: "Order Confirmed — Gothic Vault",
-    description: "Thank you for shopping with Gothic Vault Your order has been received.",
+    title: "Order Confirmed — Kovo",
+    description: "Thank you for shopping with Kovo. Your order has been received.",
     canonicalPath: "/order-confirmation",
     noindex: true,
   });
@@ -134,7 +134,7 @@ const OrderConfirmation = () => {
           </Link>
           <Link
             to="/shop"
-            className="inline-flex items-center justify-center bg-primary text-primary-foreground px-8 py-4 rounded-full text-sm font-semibold hover:bg-primary/90 transition-all duration-200 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
+            className="inline-flex items-center justify-center bg-primary text-primary-foreground px-8 py-4 rounded-[2px] text-sm font-semibold hover:bg-primary/90 transition-all duration-200 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]"
           >
             Continue Shopping
           </Link>

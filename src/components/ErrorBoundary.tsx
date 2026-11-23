@@ -41,7 +41,7 @@ class ErrorBoundary extends Component<Props, State> {
               sessionStorage.removeItem("__module_load_recovered_once__");
               window.location.reload();
             }}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm"
+            className="px-4 py-2 rounded-[2px] bg-primary text-primary-foreground text-sm"
           >
             Reload page
           </button>

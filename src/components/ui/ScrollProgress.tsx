@@ -43,9 +43,9 @@ const ScrollProgress = () => {
         style={{
           width: `${progress}%`,
           background:
-            "linear-gradient(90deg, rgba(184,154,232,0.85), rgba(205,181,246,1))",
+            "hsl(var(--foreground))",
           boxShadow:
-            "0 0 8px rgba(184,154,232,0.55), 0 0 16px rgba(184,154,232,0.35)",
+            "none",
           transition: "width 120ms linear",
           willChange: "width",
         }}

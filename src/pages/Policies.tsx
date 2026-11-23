@@ -37,9 +37,9 @@ const Policies = () => {
   const resolvedSlug = legacyTabMap[requestedSlug] ?? requestedSlug;
   useDocumentMeta({
     title: resolvedSlug
-      ? `${resolvedSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} — Gothic Vault`
-      : "Policies — Gothic Vault",
-    description: "Read Gothic Vault policies on shipping, returns, privacy and terms — clear and customer-first.",
+      ? `${resolvedSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())} — Kovo`
+      : "Policies — Kovo",
+    description: "Read Kovo policies on shipping, returns, privacy and terms — clear and customer-first.",
     canonicalPath: resolvedSlug ? `/policies/${resolvedSlug}` : "/policies",
   });
 
@@ -88,7 +88,7 @@ const Policies = () => {
               <button
                 key={p.id}
                 onClick={() => setSearchParams({ tab: p.slug ?? p.id })}
-                className={`px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-150 ${
+                className={`px-4 sm:px-5 py-2.5 rounded-[2px] text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-150 ${
                   activeTab === p.id
                     ? "bg-primary text-primary-foreground shadow-[0_2px_8px_-3px_hsl(var(--primary)/0.3)]"
                     : "bg-secondary/70 border border-border/40 text-muted-foreground hover:text-foreground hover:border-border"

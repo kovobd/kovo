@@ -5,7 +5,7 @@ export interface Env {
 }
 
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
-const DEFAULT_SUPABASE_URL = "https://nzvxkzuukibnxpfdwwol.supabase.co";
+const DEFAULT_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co";
 
 const SITEMAP_HEADERS: Record<string, string> = {
   "Content-Type": "application/xml; charset=utf-8",

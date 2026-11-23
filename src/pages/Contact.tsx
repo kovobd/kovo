@@ -16,8 +16,8 @@ import { contactFormSchema } from "@/lib/validation";
 import { ContactPageSkeleton } from "@/components/ui/page-skeletons";
 import { sanitizeMapEmbed } from "@/lib/sanitizeMapEmbed";
 import { useDocumentMeta, useJsonLd } from "@/hooks/useDocumentMeta";
+import { SITE_URL } from "@/config/site";
 
-const SITE_URL = "https://gothicvault.shop";
 
 
 type SocialLinkItem = { label: string; url: string };
@@ -102,18 +102,18 @@ const Contact = () => {
   const faqItems = (resolvedSettings.faq_shortcut_items as any[]) ?? [];
 
   useDocumentMeta({
-    title: `${resolvedSettings.page_title || "Contact"} — Gothic Vault`,
-    description: resolvedSettings.page_intro || "Get in touch with Gothic Vault",
+    title: `${resolvedSettings.page_title || "Contact"} — Kovo`,
+    description: resolvedSettings.page_intro || "Get in touch with Kovo",
     canonicalPath: "/contact",
   });
   useJsonLd("ld-contact", {
     "@context": "https://schema.org",
     "@type": "ContactPage",
-    name: "Contact Gothic Vault",
+    name: "Contact Kovo",
     url: `${SITE_URL}/contact`,
     mainEntity: {
       "@type": "Organization",
-      name: "Gothic Vault",
+      name: "Kovo",
       url: SITE_URL,
       email: resolvedSettings.email_address || undefined,
       telephone: resolvedSettings.phone_number || undefined,
@@ -178,7 +178,7 @@ const Contact = () => {
                 <input type="tel" placeholder="Phone (optional)" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full bg-secondary/70 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
               )}
               <textarea placeholder="Your message" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required rows={5} className="w-full bg-secondary/70 border border-border/40 rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all resize-none" />
-              <button type="submit" disabled={submitting} className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 rounded-full text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150 w-full sm:w-auto disabled:opacity-50 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]">
+              <button type="submit" disabled={submitting} className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-7 py-3.5 rounded-[2px] text-sm font-semibold hover:bg-primary/90 active:scale-[0.97] transition-all duration-150 w-full sm:w-auto disabled:opacity-50 shadow-[0_4px_16px_-6px_hsl(var(--primary)/0.35)]">
                 <SendIcon size={16} /> {submitting ? "Sending…" : resolvedSettings.submit_button_text || "Send Message"}
               </button>
             </form>

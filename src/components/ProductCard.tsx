@@ -9,7 +9,6 @@ import { fetchProductData } from "@/lib/fetchProductData";
 import { ShoppingBagIcon, ZapIcon } from "@/components/ui/icons";
 import { getProductPriceRange, parseOptionGroups } from "@/lib/variants";
 import { useLayoutData } from "@/components/layout/LayoutDataProvider";
-import { TiltCard } from "@/components/ui/tilt-card";
 import CdnImage from "@/components/ui/CdnImage";
 import { getR2BaseKey, isR2OriginalRef, isR2VariantRef, resolveImageSrc } from "@/lib/cdnImage";
 
@@ -76,20 +75,6 @@ const imageElementMatchesRef = (img: HTMLImageElement, imageRef: string) => {
 
   return currentSrc === toAbsoluteImageUrl(imageRef).split("?")[0];
 };
-
-// Module-scoped set: tracks which product IDs have already played the "crack restore"
-// intro during this page's lifetime, so it runs at most once per card per load.
-const gvCrackShown = new Set<string>();
-// Monotonic index for stagger reveal — increments per mounted card.
-let gvRevealIndex = 0;
-
-const CornerOrnament = () => (
-  <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M1 1 L6 1 M1 1 L1 6" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    <path d="M1 1 Q4 4 6 6" stroke="currentColor" strokeWidth="0.6" opacity="0.7" />
-    <circle cx="6.2" cy="6.2" r="0.9" fill="currentColor" opacity="0.75" />
-  </svg>
-);
 
 const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, categoryName, offers = [], priority = false, variantPriceMin, variantPriceMax, variantOrigPriceMin, variantOrigPriceMax, highlightQuery }, ref) => {
 
@@ -207,17 +192,6 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
 
 
 
-  // Broken → Restored crack overlay: play at most once per product per page load.
-  const [showCrack] = useState(() => {
-    if (typeof window === "undefined") return false;
-    if (gvCrackShown.has(product.id)) return false;
-    gvCrackShown.add(product.id);
-    return true;
-  });
-
-  // Staggered reveal — up to ~9 cards then flatten to avoid long delays on grids.
-  const revealDelay = useMemo(() => `${Math.min(gvRevealIndex++, 9) * 80}ms`, []);
-
   const isOutOfStock = product.stock <= 0;
 
 
@@ -239,20 +213,13 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
 
   return (
     <Link ref={(node) => { linkRef.current = node; if (typeof ref === "function") ref(node); else if (ref) (ref as any).current = node; }} to={`/product/${product.slug}`} className="group block" onMouseEnter={prefetchProduct} onTouchStart={prefetchProduct}>
-      <TiltCard intensity={14} perspective={1400} className="h-full">
+      <div className="h-full">
 
       <div
-        className="gv-glow-border gv-reveal flex flex-col h-full rounded-[20px] sm:rounded-[24px] border border-[#2B2337] bg-[#17131F] p-2 sm:p-2.5 shadow-[0_4px_18px_-8px_rgba(0,0,0,0.55)] transition-[transform,border-color,box-shadow] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-y-[5px] group-hover:border-[#B89AE8]/70 group-hover:shadow-[0_22px_46px_-16px_rgba(184,154,232,0.4),0_0_0_1px_rgba(184,154,232,0.28)] [transform-style:preserve-3d]"
-        style={{ ["--gv-reveal-delay" as any]: revealDelay }}
+        className="flex flex-col h-full"
       >
-        {/* Decorative gothic corner ornaments (subtle by default, brighten on hover) */}
-        <span className="gv-corner gv-corner--tl"><CornerOrnament /></span>
-        <span className="gv-corner gv-corner--tr"><CornerOrnament /></span>
-        <span className="gv-corner gv-corner--bl"><CornerOrnament /></span>
-        <span className="gv-corner gv-corner--br"><CornerOrnament /></span>
-
-        <div className="gv-img-wrap relative aspect-[4/5] overflow-hidden rounded-[14px] sm:rounded-[18px] bg-[#08060D] ring-1 ring-[#B89AE8]/[0.08] p-[6px] sm:p-[8px] transition-shadow duration-500 group-hover:shadow-[0_24px_60px_-30px_rgba(184,154,232,0.5)]" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-          <div className="relative w-full h-full overflow-hidden rounded-[10px] sm:rounded-[12px] bg-[#0D0B12]">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[hsl(var(--surface))]" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+          <div className="relative w-full h-full overflow-hidden">
           {!imgLoaded && (
             <div className="absolute inset-0 z-0 bg-muted shimmer-loading pointer-events-none" aria-hidden />
           )}
@@ -261,7 +228,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
               ref={imgRef}
               src={displayImage}
               alt={product.name}
-              className={`relative z-[1] w-full h-full object-cover transition-[transform,opacity] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.045] ${imgLoaded ? "opacity-100 gv-img-focus" : "opacity-0"}`}
+              className={`relative z-[1] w-full h-full object-cover transition-[transform,opacity] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.03] ${imgLoaded ? "opacity-100 gv-img-focus" : "opacity-0"}`}
               priority={priority}
               preload={priority}
               sizes="(min-width: 1024px) 25vw, 50vw"
@@ -272,32 +239,23 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
               onError={markDisplayImageSettled}
             />
           ) : null}
-          {/* Moonlight sweep — plays on hover */}
-          <span className="gv-moon-sweep" aria-hidden />
-          {/* Product image hover atmosphere: vignette + rising smoke */}
-          <span className="gv-img-vignette" aria-hidden />
-          <span className="gv-img-smoke" aria-hidden />
-
-          {/* Broken → Restored crack overlay — plays once when card first mounts */}
-          {showCrack && <span className="gv-crack" aria-hidden />}
           {isOutOfStock ? (
-            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center bg-card text-foreground text-[10px] sm:text-[11px] font-semibold tracking-[0.12em] uppercase px-2.5 py-1 rounded-md shadow-sm">Sold out</span>
+            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center text-[10px] font-medium tracking-[0.14em] uppercase px-2 py-1 bg-background text-muted-foreground">Sold out</span>
           ) : hasDiscount ? (
-            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center bg-[#B89AE8] text-[#050505] text-[10px] sm:text-[11px] font-semibold tracking-[0.04em] px-2.5 py-1 rounded-md shadow-[0_4px_12px_-4px_rgba(184,154,232,0.5)]">−{discountPercent}%</span>
+            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center text-[10px] font-medium tracking-[0.14em] uppercase px-2 py-1 bg-destructive text-destructive-foreground">−{discountPercent}%</span>
           ) : product.best_seller ? (
-            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center bg-[#B89AE8] text-[#050505] text-[10px] sm:text-[11px] font-semibold tracking-[0.1em] uppercase px-2.5 py-1 rounded-md shadow-[0_4px_12px_-4px_rgba(184,154,232,0.5)]">Best Seller</span>
+            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center text-[10px] font-medium tracking-[0.14em] uppercase px-2 py-1 bg-foreground text-background">Best seller</span>
           ) : (product as any).is_new_arrival ? (
-            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center border border-[#B89AE8]/60 bg-card/90 text-[#CDB5F6] text-[10px] sm:text-[11px] font-semibold tracking-[0.14em] uppercase px-2.5 py-1 rounded-md shadow-[0_4px_12px_-6px_rgba(184,154,232,0.45)] backdrop-blur-sm">New</span>
+            <span className="absolute top-2.5 left-2.5 z-[4] inline-flex items-center text-[10px] font-medium tracking-[0.14em] uppercase px-2 py-1 bg-background text-foreground">New</span>
           ) : null}
           {offerName && !isOutOfStock && (
-            <span className="absolute top-2.5 right-2.5 z-[4] bg-card text-foreground text-[10px] sm:text-[11px] font-medium tracking-[0.08em] uppercase px-2.5 py-1 rounded-md shadow-sm">{offerName}</span>
+            <span className="absolute top-2.5 right-2.5 z-[4] bg-background text-foreground text-[10px] font-medium tracking-[0.14em] uppercase px-2 py-1">{offerName}</span>
           )}
           </div>
         </div>
 
-        <div className="pt-2.5 px-1 sm:px-1.5 pb-1.5 flex flex-col flex-1">
-          {/* Title — uppercase, bold, editorial */}
-          <h3 className="gv-card-title text-[12px] sm:text-[13px] lg:text-[14px] font-bold tracking-[0.04em] uppercase text-foreground leading-snug line-clamp-2 mb-2">
+        <div className="pt-3 pb-1 flex flex-col flex-1">
+          <h3 className="text-[13px] sm:text-[14px] font-normal tracking-[0.01em] text-foreground leading-snug line-clamp-2 mb-1.5 underline-offset-4 decoration-1 group-hover:underline">
             {highlightText(product.name, highlightQuery)}
           </h3>
 
@@ -347,7 +305,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
                         return (
                           <span
                             key={val}
-                            className="px-1.5 h-5 inline-flex items-center text-[10px] font-medium rounded-full border border-foreground/15 text-foreground/70 bg-background"
+                            className="px-1.5 h-5 inline-flex items-center text-[10px] font-medium border border-foreground/15 text-foreground/70 bg-background"
                           >
                             {val}
                           </span>
@@ -395,28 +353,28 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
           </div>
 
 
-          {/* Actions — pill style, glass + ink */}
+          {/* Actions — square, small uppercase labels */}
           {anyButton && (
-            <div className="mt-auto flex flex-col gap-2.5">
+            <div className="mt-auto flex flex-col gap-2">
               {(showViewDetails || showAddToCart) && (
                 <div className={`grid gap-2 ${showViewDetails && showAddToCart ? "grid-cols-2" : "grid-cols-1"}`}>
                   {showViewDetails && (
                     <button
                       onClick={(e) => { e.preventDefault(); navigate(`/product/${product.slug}`); }}
-                      className="h-9 rounded-full border border-foreground/15 hover:border-foreground/30 text-foreground/75 hover:text-foreground hover:bg-foreground/[0.03] text-[11px] sm:text-[12px] font-medium tracking-[-0.005em] active:scale-[0.97] transition-all duration-200 touch-manipulation inline-flex items-center justify-center"
+                      className="h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center border border-border text-foreground hover:border-foreground"
                       aria-label="View details"
                     >
-                      <span className="hidden xs:inline">View details</span><span className="xs:hidden">Details</span>
+                      <span className="hidden lg:inline">View details</span><span className="lg:hidden">Details</span>
                     </button>
                   )}
                   {showAddToCart && (
                     <button
                       onClick={handleAddToCart}
                       disabled={isOutOfStock}
-                      className="h-9 rounded-full glass-button text-foreground text-[11px] sm:text-[12px] font-medium tracking-[-0.005em] active:scale-[0.97] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1 sm:gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                      aria-label="Add to Vault"
+                      className="h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1.5 border border-foreground text-foreground hover:bg-foreground hover:text-background disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Add to cart"
                     >
-                      {addedFeedback ? <>✓ Added</> : <><ShoppingBagIcon size={12} /> <span className="hidden xs:inline">Add to Vault</span><span className="xs:hidden">Add</span></>}
+                      {addedFeedback ? <>✓ Added</> : <><ShoppingBagIcon size={12} /> <span className="hidden lg:inline">Add to cart</span><span className="lg:hidden">Add</span></>}
                     </button>
                   )}
                 </div>
@@ -425,7 +383,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
                 <button
                   onClick={handleBuyNow}
                   disabled={isOutOfStock}
-                  className="w-full h-10 rounded-full bg-[#B89AE8] text-[#050505] text-[11px] sm:text-[12px] font-semibold tracking-[0.01em] hover:bg-[#CDB5F6] hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1 sm:gap-1.5 shadow-[0_8px_24px_-6px_rgba(184,154,232,0.45)] hover:shadow-[0_10px_28px_-4px_rgba(184,154,232,0.6)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-10 px-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-[0.08em] sm:tracking-[0.12em] whitespace-nowrap active:scale-[0.98] transition-all duration-200 touch-manipulation inline-flex items-center justify-center gap-1.5 bg-foreground text-background hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Buy now"
                 >
                   <ZapIcon size={12} /> Buy now
@@ -436,7 +394,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
           )}
         </div>
       </div>
-      </TiltCard>
+      </div>
     </Link>
   );
 });

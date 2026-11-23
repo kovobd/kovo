@@ -1,4 +1,4 @@
-name = "gothicvault"
+name = "kovo"
 compatibility_date = "2025-04-01"
 main = "worker/index.ts"
 workers_dev = true
@@ -9,6 +9,6 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 
 [vars]
-VITE_SUPABASE_URL = "https://nzvxkzuukibnxpfdwwol.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56dnhrenV1a2libnhwZmR3d29sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwODI1NzQsImV4cCI6MjA5OTY1ODU3NH0.h3qiH_79PkRAIogJUCgKCH_mKKK6Bzjun-I_ZWnXfWs"
-VITE_SUPABASE_PROJECT_ID = "nzvxkzuukibnxpfdwwol"
+VITE_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_8aDj4KLj16KX_zLKZOsnsw_9tOzFpCi"
+VITE_SUPABASE_PROJECT_ID = "pyzjuxdznayzenxjpiea"
