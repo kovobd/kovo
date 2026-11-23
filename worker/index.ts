@@ -8,6 +8,7 @@ export interface Env {
 
 import { renderStorefront, SSR_BUILD_ID } from "../dist-ssr/entry-server.js";
 import { heroImageAttrs, HERO_MOBILE_QUERY, cdnImageAttrs, PDP_MAIN_IMAGE_SIZES } from "../src/lib/imageUrls";
+import { HOME_META, findShopCategory, productMeta, shareImageUrl, shopMeta, type PageMeta } from "../src/lib/pageMeta";
 
 // Hard-coded fallback so /sitemap.xml works even before env vars are wired.
 const DEFAULT_SUPABASE_URL = "https://pyzjuxdznayzenxjpiea.supabase.co";
@@ -542,7 +543,8 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
     : homeIdx >= 0 && texts[homeIdx] ? heroPreloads(texts[homeIdx]!, texts[0])
     : productIdx >= 0 && texts[productIdx] ? productPreload(texts[productIdx]!, texts[0])
     : "";
-  if (!inline.length && !preload) return page;
+  const meta = pageMetaFor(url, entries, texts);
+  if (!inline.length && !preload && !meta) return page;
 
   const headers = new Headers(page.headers);
   // Whether this page arrived server-rendered: "hit", "miss" (rendering in
@@ -554,7 +556,15 @@ async function serveStorefrontHtml(request: Request, env: Env, ctx: ExecutionCon
   headers.delete("ETag");
   headers.delete("Content-Length");
   headers.set("Cache-Control", "no-cache");
-  const rewritten = new HTMLRewriter()
+  let r2Base = "";
+  try {
+    r2Base = String((texts[0] ? JSON.parse(texts[0])?.data?.r2PublicBaseUrl : "") || "");
+  } catch {
+    /* no layout data */
+  }
+  if (!r2Base) r2Base = env.VITE_R2_PUBLIC_BASE_URL || DEFAULT_R2_PUBLIC_BASE;
+  const rewriter = meta ? applyPageMeta(new HTMLRewriter(), meta, url.origin, r2Base) : new HTMLRewriter();
+  const rewritten = rewriter
     // After the viewport tag: before it, phones report a 980px layout width,
     // so the screen-size check would pick the desktop image.
     .on('meta[name="viewport"]', {
@@ -621,6 +631,73 @@ async function proxyR2Image(env: Env, key: string): Promise<Response> {
       "X-Content-Type-Options": "nosniff",
     },
   });
+}
+
+// ── Link previews ──────────────────────────────────────────────────────────
+// Facebook, WhatsApp, Messenger, X and search engines read the title,
+// description, image and address from the HTML without running JavaScript, so
+// the Worker writes each page's own values in (the shell has the home page's).
+// Same rules as the pages use once the app runs: src/lib/pageMeta.ts.
+
+/** This page's metadata from the data the Worker already has, or null to leave the shell's. */
+function pageMetaFor(url: URL, entries: { fn: string }[], texts: (string | null)[]): PageMeta | null {
+  const json = (fn: string) => {
+    const i = entries.findIndex((e) => e.fn === fn);
+    if (i < 0 || !texts[i]) return null;
+    try {
+      return JSON.parse(texts[i]!)?.data ?? null;
+    } catch {
+      return null;
+    }
+  };
+  if (url.pathname === "/") return HOME_META;
+  if (url.pathname === "/shop") {
+    const category = url.searchParams.get("category");
+    const layout = json("public-layout");
+    // An unknown category, or no layout to check it against: the plain shop page.
+    return shopMeta(category && layout ? findShopCategory(layout.categories, category) : null);
+  }
+  const m = url.pathname.match(/^\/product\/([^/]+)\/?$/);
+  if (m) {
+    const product = json("public-product")?.product;
+    // No data (not cached yet, or no such product): keep the shell's values
+    // rather than describe a product we cannot see.
+    return product ? productMeta(product, decodeURIComponent(m[1])) : null;
+  }
+  return null;
+}
+
+const escAttr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** HTMLRewriter handlers that put `meta` into the page head. */
+function applyPageMeta(rw: HTMLRewriter, meta: PageMeta, origin: string, r2Base: string): HTMLRewriter {
+  const pageUrl = `${origin}${meta.canonicalPath}`;
+  const image = shareImageUrl(meta.image, r2Base, origin);
+  const content = (value: string) => ({ element(el: Element) { el.setAttribute("content", value); } });
+  rw = rw
+    .on("head > title", { element(el) { el.setInnerContent(meta.title); } })
+    .on('meta[name="description"]', content(meta.description))
+    .on('meta[property="og:title"]', content(meta.title))
+    .on('meta[name="twitter:title"]', content(meta.title))
+    .on('meta[property="og:description"]', content(meta.description))
+    .on('meta[name="twitter:description"]', content(meta.description))
+    .on('meta[property="og:url"]', content(pageUrl))
+    .on('meta[property="og:type"]', content(meta.type))
+    .on('link[rel="canonical"]', { element(el) { el.setAttribute("href", pageUrl); } });
+  if (image) {
+    rw = rw
+      .on('meta[property="og:image"]', {
+        element(el) {
+          el.setAttribute("content", image);
+          // Alt text for the preview image.
+          el.after(`<meta property="og:image:alt" content="${escAttr(meta.title)}">`, { html: true });
+        },
+      })
+      .on('meta[name="twitter:image"]', content(image))
+      // The shell's size belongs to its own default image, not this one.
+      .on('meta[property="og:image:width"], meta[property="og:image:height"]', { element(el) { el.remove(); } });
+  }
+  return rw;
 }
 
 export default {

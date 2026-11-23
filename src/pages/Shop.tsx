@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { findShopCategory, shopMeta } from "@/lib/pageMeta";
 import { useStaggerIn } from "@/hooks/useMotion";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -182,39 +183,13 @@ const Shop = () => {
   }, [search, sort, category, brand, availability, priceRange, products, categories, brandsList, getProductMinPrice, getProductMaxPrice]);
 
   // Resolve the active category (when ?category= filter is applied) to drive SEO metadata.
-  const activeCategory = useMemo(() => {
-    if (category === "All") return null;
-    const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "-");
-    return (
-      categories.find(
-        (c: any) => c.name === category || c.slug === category || norm(c.name) === norm(category),
-      ) ?? null
-    );
-  }, [category, categories]);
+  const activeCategory = useMemo(() => findShopCategory(categories, category), [category, categories]);
 
-  const seoTitle = activeCategory
-    ? ((activeCategory as any).meta_title || `${(activeCategory as any).name} — Kovo`)
-    : "Shop — Kovo";
-  const seoDescription = activeCategory
-    ? ((activeCategory as any).meta_description
-        || `Browse ${(activeCategory as any).name} from Kovo. Cash on delivery across Bangladesh.`)
-    : "Shop Kovo bags, wallets and accessories. Cash on delivery across Bangladesh.";
-  const seoImage = activeCategory
-    ? ((activeCategory as any).featured_image_url || (activeCategory as any).image_url || undefined)
-    : undefined;
-  const absoluteSeoImage = seoImage
-    ? (seoImage.startsWith("http") ? seoImage : `${SITE_URL}${seoImage.startsWith("/") ? "" : "/"}${seoImage}`)
-    : undefined;
-  const canonicalPath = activeCategory
-    ? `/shop?category=${encodeURIComponent((activeCategory as any).slug || (activeCategory as any).name)}`
-    : "/shop";
-
-  useDocumentMeta({
-    title: seoTitle,
-    description: String(seoDescription).slice(0, 160),
-    canonicalPath,
-    image: absoluteSeoImage,
-  });
+  // Same values the Worker writes into the HTML for link previews.
+  const shopPageMeta = shopMeta(activeCategory);
+  const seoDescription = shopPageMeta.description;
+  const canonicalPath = shopPageMeta.canonicalPath;
+  useDocumentMeta(shopPageMeta);
 
   useJsonLd("ld-collection", activeCategory ? {
     "@context": "https://schema.org",

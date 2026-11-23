@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { productMeta, shareImageUrl } from "@/lib/pageMeta";
 import { ScrollScene } from "@/components/ui/scroll-scene";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -105,23 +106,11 @@ const ProductDetails = () => {
   const product = data?.product;
   const categoryNameForTrack = data?.categoryName;
   const brandNameForMeta = (data as any)?.brandName as string | undefined;
-  const primaryImage = (product?.images?.find((s: string) => typeof s === "string" && s.trim().length > 0)) ?? undefined;
-  const absoluteImage = primaryImage
-    ? (primaryImage.startsWith("http") ? primaryImage : `${SITE_URL}${primaryImage.startsWith("/") ? "" : "/"}${primaryImage}`)
-    : undefined;
-  const cleanDescription = product
-    ? (product.short_description || product.description || `${product.name} — from Kovo.`)
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 160)
-    : "Bags and accessories from Kovo. Cash on delivery across Bangladesh.";
-  useDocumentMeta({
-    title: product?.name ? `${product.name} — Kovo` : "Product — Kovo",
-    description: cleanDescription,
-    canonicalPath: id ? `/product/${id}` : "/shop",
-    image: absoluteImage,
-  });
+  // Same values the Worker writes into the HTML for link previews.
+  const pageMeta = productMeta(product, id);
+  const cleanDescription = pageMeta.description;
+  const absoluteImage = shareImageUrl(pageMeta.image, getR2Base(), SITE_URL);
+  useDocumentMeta(pageMeta);
 
   // Product + BreadcrumbList JSON-LD — derived entirely from existing DB data.
   const productJsonLd = product

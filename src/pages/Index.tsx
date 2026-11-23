@@ -1,4 +1,5 @@
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { HOME_META } from "@/lib/pageMeta";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo, lazy, Suspense, forwardRef } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -160,11 +161,7 @@ const Index = () => {
   const catSection = getContent("categories_showcase");
   const brandSection = getContent("brands_showcase");
 
-  useDocumentMeta({
-    title: "Kovo | Bags & Accessories in Bangladesh",
-    description: "Kovo — bags and accessories, delivered across Bangladesh with cash on delivery.",
-    canonicalPath: "/",
-  });
+  useDocumentMeta(HOME_META);
 
   // Render the page shell immediately. Sections gate themselves on `data`/`hasLoadedHomepageData`.
   // This avoids a full blank screen flash and lets the hero/LCP image start loading as soon as

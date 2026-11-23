@@ -1,12 +1,6 @@
 import { useEffect } from "react";
-import { getR2BaseKey, isR2OriginalRef, isR2VariantRef, r2Direct, r2Original } from "@/lib/cdnImage";
-
-/** Share previews need a plain JPG/PNG URL, not an `r2:` / `r2o:` ref. */
-const shareImageUrl = (src: string): string => {
-  if (isR2VariantRef(src)) return r2Original(getR2BaseKey(src)) || src;
-  if (isR2OriginalRef(src)) return r2Direct(getR2BaseKey(src)) || src;
-  return src;
-};
+import { getR2Base } from "@/lib/cdnImage";
+import { shareImageUrl } from "@/lib/pageMeta";
 
 const setMeta = (selector: string, attr: string, value: string) => {
   let el = document.head.querySelector<HTMLMetaElement>(selector);
@@ -35,19 +29,25 @@ export interface DocumentMetaOptions {
   description?: string;
   canonicalPath?: string;
   noindex?: boolean;
+  /** As stored: r2:/r2o: ref, http URL or site path (see shareImageUrl). */
   image?: string;
+  /** Open Graph type ("product" on product pages). */
+  type?: "website" | "product";
 }
 
 /**
  * Lightweight per-page meta updater (no react-helmet dep).
  * Call once at the top of a page component with stable strings.
  */
-export function useDocumentMeta({ title, description, canonicalPath, noindex, image }: DocumentMetaOptions) {
+// The Worker writes the same values into the HTML for the home, shop and
+// product pages (src/lib/pageMeta.ts), which is what link previews read.
+export function useDocumentMeta({ title, description, canonicalPath, noindex, image, type }: DocumentMetaOptions) {
   useEffect(() => {
     const previousTitle = document.title;
     const previousCanonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? null;
     const previousOgUrl = document.head.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.content ?? null;
     const previousOgImage = document.head.querySelector<HTMLMetaElement>('meta[property="og:image"]')?.content ?? null;
+    const previousOgType = document.head.querySelector<HTMLMetaElement>('meta[property="og:type"]')?.content ?? null;
     document.title = title;
     if (description) {
       setMeta('meta[name="description"]', "content", description);
@@ -62,10 +62,12 @@ export function useDocumentMeta({ title, description, canonicalPath, noindex, im
       setLink("canonical", url);
       setMeta('meta[property="og:url"]', "content", url);
     }
-    if (image) {
-      setMeta('meta[property="og:image"]', "content", shareImageUrl(image));
-      setMeta('meta[name="twitter:image"]', "content", shareImageUrl(image));
+    const shareImage = shareImageUrl(image, getR2Base(), window.location.origin);
+    if (shareImage) {
+      setMeta('meta[property="og:image"]', "content", shareImage);
+      setMeta('meta[name="twitter:image"]', "content", shareImage);
     }
+    if (type) setMeta('meta[property="og:type"]', "content", type);
     if (noindex) {
       setMeta('meta[name="robots"]', "content", "noindex,nofollow");
     }
@@ -77,9 +79,13 @@ export function useDocumentMeta({ title, description, canonicalPath, noindex, im
       }
       if (previousCanonical) setLink("canonical", previousCanonical);
       if (previousOgUrl) setMeta('meta[property="og:url"]', "content", previousOgUrl);
-      if (previousOgImage) setMeta('meta[property="og:image"]', "content", previousOgImage);
+      if (previousOgImage) {
+        setMeta('meta[property="og:image"]', "content", previousOgImage);
+        setMeta('meta[name="twitter:image"]', "content", previousOgImage);
+      }
+      if (previousOgType) setMeta('meta[property="og:type"]', "content", previousOgType);
     };
-  }, [title, description, canonicalPath, noindex, image]);
+  }, [title, description, canonicalPath, noindex, image, type]);
 }
 
 /** Inject (or replace) a JSON-LD <script> tag identified by a stable id. */
