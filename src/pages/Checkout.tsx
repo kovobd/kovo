@@ -1,4 +1,5 @@
 import { resolveImageSrc } from "@/lib/cdnImage";
+import { uuid } from "@/lib/uuid";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { trackInitiateCheckout, trackAddPaymentInfo, splitName } from "@/lib/trackingEvents";
 import { Link, useNavigate } from "react-router-dom";
@@ -307,7 +308,7 @@ const Checkout = () => {
     }
     setSubmitting(true);
 
-    const orderId = crypto.randomUUID();
+    const orderId = uuid();
     const { data: orderNumberRpc, error: numErr } = await supabase.rpc("next_order_number");
     if (numErr || !orderNumberRpc) {
       setSubmitting(false);
@@ -358,6 +359,9 @@ const Checkout = () => {
       coupon_code: appliedCoupon?.code || null,
       total,
       notes: composedNotes || null,
+      // "cod" or the online method's id (bkash, nagad, ...): the courier
+      // collects cash only for "cod".
+      payment_method: (selectedMethod?.type ?? "cod") === "cod" ? "cod" : (selectedMethod?.id ?? "cod"),
       payment_status: "pending",
       order_status: "pending",
     });
@@ -367,6 +371,17 @@ const Checkout = () => {
       toast({ title: "Order failed", description: error.message, variant: "destructive" });
       return;
     }
+
+    // Stock, coupon usage and the customer record, worked out by the database
+    // from the stored order (a shopper cannot change stock or coupons directly).
+    // Awaited so it is not cut off by the page change; an order is never lost
+    // over it.
+    // (Not in the generated types yet: migration 20261124130000.)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.rpc as any)("finalize_storefront_order", { _order_id: orderId })
+      .then(({ error: finErr }: { error: { message: string } | null }) => {
+        if (finErr) console.warn("order finalize failed:", finErr.message);
+      }, (e: unknown) => console.warn("order finalize failed:", e));
 
     // Store items + user data + a session-bound token so the confirmation page can
     // verify this browser actually completed *this* order (defeats forged ?order=… URLs).
@@ -389,55 +404,12 @@ const Checkout = () => {
         .catch((e) => console.warn("recovery mark failed:", e));
       clearCheckoutSession();
 
-      // Variant-aware stock deduction: deduct from the exact variant when known,
-      // otherwise from the parent product. Free gifts deduct stock too.
-      type StockLine = { productId: string; variantId: string | null; quantity: number };
-      const stockLines: StockLine[] = [];
-      const pushLine = (productId: string, variantId: string | null, quantity: number) => {
-        if (!productId || quantity <= 0) return;
-        const existing = stockLines.find(
-          (s) => s.productId === productId && s.variantId === variantId
-        );
-        if (existing) existing.quantity += quantity;
-        else stockLines.push({ productId, variantId, quantity });
-      };
-      items.forEach((item) => {
-        const pid = item.productId ?? item.id;
-        pushLine(pid, item.variantId ?? null, item.quantity);
-      });
-      appliedProductOffers.forEach((ao) => {
-        ao.freeItems.forEach((f) => pushLine(f.productId, f.variantId ?? null, f.quantity));
-      });
-
-      stockLines.forEach(({ productId, variantId, quantity }) => {
-        const p = variantId
-          ? supabase.rpc("decrement_variant_stock", { _variant_id: variantId, _quantity: quantity })
-          : supabase.rpc("decrement_product_stock", { _product_id: productId, _quantity: quantity });
-        p.then(() => {}, (e) => console.warn("stock decrement failed:", e));
-      });
-
-
-      if (appliedCoupon) {
-        supabase.rpc("increment_coupon_usage", { _code: appliedCoupon.code })
-          .then(() => {}, (e) => console.warn("coupon usage failed:", e));
-      }
-
-      supabase.rpc("upsert_checkout_customer", {
-        _name: form.name,
-        _email: form.email,
-        _phone: form.phone || "",
-        _order_total: total,
-      }).then(() => {}, (e) => console.warn("customer upsert failed:", e));
-
       if (form.email) {
         subscribeToNewsletter(form.email).catch((e) => console.warn("newsletter failed:", e));
       }
 
-      if ((selectedMethod?.type ?? "cod") === "cod") {
-        supabase.functions
-          .invoke("steadfast-proxy", { body: { action: "create_order", orderId } })
-          .catch((e) => console.warn("Courier auto-push failed:", e));
-      }
+      // Courier booking is done by the admin from the Orders page (the
+      // courier functions need an admin login; a call from here always failed).
     })();
   };
 

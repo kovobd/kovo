@@ -3,6 +3,7 @@
 // (variant-aware), marks the incomplete row as recovered, and best-effort
 // pushes to the active courier when payment is COD.
 
+import { uuid } from "@/lib/uuid";
 import { supabase } from "@/integrations/supabase/client";
 
 export type RecoverItem = {
@@ -76,7 +77,7 @@ export async function recoverIncompleteOrderClient(p: RecoverPayload): Promise<R
   const { data: orderNumberRpc, error: numErr } = await supabase.rpc("next_order_number");
   if (numErr || !orderNumberRpc) throw numErr ?? new Error("Could not generate order number");
   const orderNumber = orderNumberRpc as string;
-  const orderId = crypto.randomUUID();
+  const orderId = uuid();
 
   // 3. Insert order.
   const orderItems = p.items.map((it) => ({

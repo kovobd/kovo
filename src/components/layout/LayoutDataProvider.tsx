@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { uuid } from "@/lib/uuid";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { PublicApi } from "@/lib/publicApi";
@@ -113,7 +114,7 @@ export const LayoutDataProvider = ({ children }: { children: ReactNode }) => {
         let extId = "";
         try {
           extId = localStorage.getItem("__sas_eid") || "";
-          if (!extId) { extId = crypto.randomUUID(); localStorage.setItem("__sas_eid", extId); }
+          if (!extId) { extId = uuid(); localStorage.setItem("__sas_eid", extId); }
         } catch {}
         const amBlock = px.advanced_matching !== false && extId
           ? `,{external_id:'${extId}'}` : "";
