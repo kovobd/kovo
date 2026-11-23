@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { memo, useState, useEffect, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Link } from "react-router-dom";
 import { resolveImageSrc, getR2Base } from "@/lib/cdnImage";
@@ -75,7 +75,9 @@ const HeroBlankFrame = ({ isMobile }: { isMobile: boolean }) => (
   <section className={`relative w-full ${isMobile ? "aspect-[9/16] max-h-[85svh]" : "aspect-[16/9] max-h-[calc(100svh-92px)]"} bg-secondary`} aria-hidden />
 );
 
-const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priority: boolean; isMobile: boolean }) => {
+// Memoised: a slide change re-renders the slider, and each slide must keep
+// its <img> element (a new one shows the empty frame until it decodes).
+const SlideOverlay = memo(function SlideOverlay({ slide, priority, isMobile }: { slide: HeroSlide; priority: boolean; isMobile: boolean }) {
   const mode: InteractionMode = (slide.interaction_mode as InteractionMode) || "buttons";
   const rawSrc = (isMobile && slide.mobile_image_url) || slide.image_url;
   const showButtons = mode === "buttons" || mode === "both";
@@ -100,22 +102,27 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
         width={isMobile ? 900 : 1600}
         height={isMobile ? 1600 : 900}
         className="absolute inset-0 w-full h-full object-cover"
-        loading={priority ? "eager" : "lazy"}
+        // Later slides are only mounted once the page has loaded (see
+        // laterSlidesReady), so they download straight away, ready before
+        // they slide in. ("lazy" waited until a slide was on screen, showing
+        // the empty frame while it loaded.)
+        loading="eager"
         decoding="async"
-        {...(priority ? { fetchpriority: "high" as const } : {})}
+        {...(priority ? { fetchpriority: "high" as const } : { fetchpriority: "low" as const })}
       />
   );
 
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
-    imageIsLink ? (
-      <Link to={slide.image_click_link!} className="absolute inset-0 block">{children}</Link>
-    ) : (
-      <>{children}</>
-    );
-
   return (
-    <div className="relative w-full h-full overflow-hidden bg-black">
-      <Wrapper>{imgNode}</Wrapper>
+    // Light placeholder, not black, behind a photo that is still loading.
+    <div className="relative w-full h-full overflow-hidden bg-secondary">
+      {/* Not a wrapper component declared in here: that would be a new
+          component type on every render, so React would replace the <img>
+          (and flash the empty frame) each time the slide changed. */}
+      {imageIsLink ? (
+        <Link to={slide.image_click_link!} className="absolute inset-0 block">{imgNode}</Link>
+      ) : (
+        imgNode
+      )}
 
       {(slide.headline || slide.subheadline || showButtons) && (
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/65 via-black/20 to-transparent" />
@@ -154,7 +161,7 @@ const SlideOverlay = ({ slide, priority, isMobile }: { slide: HeroSlide; priorit
       )}
     </div>
   );
-};
+});
 
 const aspectClass = (isMobile: boolean) =>
   isMobile
