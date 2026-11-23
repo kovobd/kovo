@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import { isModuleLoadError, reloadForNewVersion } from "@/lib/newVersionReload";
 
 interface Props { children: ReactNode; }
 interface State { hasError: boolean; error: Error | null; }
@@ -12,21 +13,8 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error) {
     console.error("[ErrorBoundary] Caught:", error.message);
-    // Attempt recovery on chunk load failures
-    const isChunkError =
-      error.message?.includes("Failed to fetch dynamically imported module") ||
-      error.message?.includes("Importing a module script failed") ||
-      error.message?.includes("Loading chunk") ||
-      error.message?.includes("Loading CSS chunk");
-
-    if (isChunkError) {
-      const key = "__error_boundary_recovered__";
-      if (sessionStorage.getItem(key) !== "1") {
-        sessionStorage.setItem(key, "1");
-        window.location.reload();
-        return;
-      }
-    }
+    // Code of an older version of the site: reload to get the new one.
+    if (isModuleLoadError(error.message || "")) reloadForNewVersion();
   }
 
   render() {
@@ -37,8 +25,6 @@ class ErrorBoundary extends Component<Props, State> {
           <p className="text-sm text-muted-foreground max-w-md">{this.state.error?.message}</p>
           <button
             onClick={() => {
-              sessionStorage.removeItem("__error_boundary_recovered__");
-              sessionStorage.removeItem("__module_load_recovered_once__");
               window.location.reload();
             }}
             className="px-4 py-2 rounded-[2px] bg-primary text-primary-foreground text-sm"
