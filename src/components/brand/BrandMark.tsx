@@ -15,21 +15,23 @@ const sizeMap = {
 };
 
 /**
- * Kovo wordmark. Set in type rather than an image so it stays crisp at any
- * size and needs no asset request.
+ * Kovo wordmark: "KOVO." in bold. Set in type rather than an image so it
+ * stays crisp at any size and needs no asset request.
  */
 const BrandMark = ({ className, size = "md", invert = false }: BrandMarkProps) => (
   <span
     role="img"
     aria-label="Kovo"
     className={cn(
-      "inline-block select-none font-display font-medium uppercase leading-none tracking-[0.32em] -mr-[0.32em]",
+      "inline-block select-none font-display font-bold uppercase leading-none tracking-[0.32em]",
       invert ? "text-background" : "text-foreground",
       sizeMap[size],
       className,
     )}
   >
-    Kovo
+    {/* The last letter carries no tracking, so the full stop sits right after
+        it and nothing trails past the word (the mark stays centred). */}
+    Kov<span className="tracking-normal">o.</span>
   </span>
 );
 

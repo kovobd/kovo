@@ -207,7 +207,7 @@ const Cart = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="text-[13px] sm:text-sm font-medium text-foreground line-clamp-2">{item.name}</h3>
+                      <h3 className="text-[14px] sm:text-[15px] font-medium text-foreground line-clamp-2">{item.name}</h3>
                       {item.variant && <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.variant}</p>}
                     </div>
                     <button onClick={() => removeItem(item.id)} aria-label={`Remove ${item.name} from cart`} className="p-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">

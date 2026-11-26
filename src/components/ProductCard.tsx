@@ -287,7 +287,7 @@ const ProductCard = forwardRef<HTMLAnchorElement, ProductCardProps>(({ product, 
         </div>
 
         <div className="pt-3 pb-1 flex flex-col flex-1">
-          <h3 className="text-[13px] sm:text-[14px] font-normal tracking-[0.01em] text-foreground leading-snug line-clamp-2 mb-1.5 underline-offset-4 decoration-1 group-hover:underline">
+          <h3 className="text-[14px] sm:text-[15px] font-normal tracking-[0.01em] text-foreground leading-snug line-clamp-2 mb-1.5 underline-offset-4 decoration-1 group-hover:underline">
             {highlightText(product.name, highlightQuery)}
           </h3>
 

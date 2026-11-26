@@ -588,7 +588,7 @@ const Checkout = () => {
                 <div key={item.id} className="flex gap-3">
                   <img src={resolveImageSrc(item.image, 400)} alt={item.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground line-clamp-1">{item.name}</p>
+                    <p className="text-[15px] text-foreground line-clamp-1">{item.name}</p>
                     <p className="text-xs text-muted-foreground">Qty: {toBanglaDigits(item.quantity)}{item.variant ? ` · ${item.variant}` : ""}</p>
                   </div>
                   <span className="text-sm font-medium text-foreground">{CURRENCY_SYMBOL}{toBanglaDigits((item.price * item.quantity).toFixed(0))}</span>
